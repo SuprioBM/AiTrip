@@ -12,7 +12,8 @@ export default function LoginPage() {
   const [msg, setMsg] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
-
+  
+  // TODO: fix the color contrast issues in dark mode
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMsg("");
