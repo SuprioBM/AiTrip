@@ -11,6 +11,7 @@ import bookingRoutes from "./routes/bookingRoutes.js";
 import partnerRoutes from "./routes/partnerRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import OauthRoutes from "./routes/OauthRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/partners", partnerRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/auth/oauth", OauthRoutes);
 
 // Error handler
 app.use(errorHandler);

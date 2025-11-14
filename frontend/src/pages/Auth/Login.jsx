@@ -26,13 +26,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleGmailLogin = () => {
-    // Simulated Gmail auth
-    setMsg("Redirecting to Gmail...");
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 2000);
-  };
+ 
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-black via-gray-900 to-blue-950 relative">
@@ -155,21 +149,42 @@ export default function LoginPage() {
             </div>
 
             {/* Gmail Sign-In */}
-            <button
-              type="button"
-              onClick={handleGmailLogin}
-              className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
-            >
-              <Chrome className="w-5 h-5 text-gray-400" />
-              Sign in with Gmail
-            </button>
+            <div className="flex flex-col gap-3">
+              {/* GitHub */}
+              <button
+                type="button"
+                onClick={() =>
+                  (window.location.href = `http://localhost:5000/api/auth/oauth/github`)
+                }
+                className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
+              >
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 .5A12 12 0 0 0 0 12.7c0 5.4 3.4 9.9 8 11.5.6.1.8-.3.8-.6v-2c-3.3.8-4-1.6-4-1.6-.5-1.4-1.3-1.8-1.3-1.8-1-.7.1-.7.1-.7 1.2.1 1.8 1.3 1.8 1.3 1 .1.5 1.8 2.4 2.6.2-.8.4-1.3.8-1.7-2.6-.3-5.3-1.4-5.3-6A4.7 4.7 0 0 1 5 9.4a4.3 4.3 0 0 1 .1-3.2s1-.3 3.2 1.3c.9-.3 2-.4 3.1-.4s2.2.2 3 .4C16.6 6 17.7 6.2 17.7 6.2a4.6 4.6 0 0 1 .2 3.2 4.7 4.7 0 0 1 1.2 3.4c0 4.7-2.7 5.6-5.3 6a3.1 3.1 0 0 1 .9 2.4v3.6c0 .3.2.7.8.6 4.6-1.7 8-6.1 8-11.5A12 12 0 0 0 12 .5Z" />
+                </svg>
+                Continue with GitHub
+              </button>
+
+              {/* Google */}
+              <button
+                type="button"
+                onClick={() =>
+                  (window.location.href = `http://localhost:5000/api/auth/oauth/google`)
+                }
+                className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
+              >
+                <Chrome className="w-5 h-5 text-gray-400" />
+                Continue with Google
+              </button>
+            </div>
           </form>
         )}
 
         {/* Register Tab Placeholder */}
-        {activeTab === "register" && (
-          <RegisterPage />
-        )}
+        {activeTab === "register" && <RegisterPage />}
       </div>
     </div>
   );
