@@ -12,7 +12,8 @@ const hostsData = [
   { id: 5, name: "Priya Sharma", location: "Mumbai, India", rating: 4.9, availability: "Available", photo: "🇮🇳" },
 ];
 
-export default function LocalHostsPage() {
+export default function LocalHostsPage({hosts}) {
+  const [hostsData, setHostsData] = useState(hosts);
   const [selectedHost, setSelectedHost] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

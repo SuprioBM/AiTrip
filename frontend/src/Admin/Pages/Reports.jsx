@@ -12,7 +12,8 @@ const reviewsReportsData = [
   { id: 5, type: "Review", user: "Jessica Lee", subject: "Amazing trip planning service", rating: 5, status: "Approved", date: "2024-02-11" },
 ];
 
-export default function ReviewsReportsPage() {
+export default function ReviewsReportsPage({reviews}) {
+  const [reviewsReportsData, setReviewsReportsData] = useState(reviews);
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

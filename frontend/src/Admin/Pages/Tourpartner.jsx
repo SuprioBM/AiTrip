@@ -11,7 +11,8 @@ const partnersData = [
   { id: 5, name: "Adventure Seekers", rating: 3.8, status: "Unverified", joinDate: "2024-02-01", tours: 5 },
 ];
 
-export default function TourPartnersPage() {
+export default function TourPartnersPage({partners}) {
+  const [partnersData, setPartnersData] = useState(partners);
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

@@ -12,7 +12,8 @@ const tripsData = [
   { id: "TP005", user: "Jessica Lee", destination: "Rome, Italy", budget: "$2,200", generated: "2024-02-11", duration: "6 days" },
 ];
 
-export default function TripPlansPage() {
+export default function TripPlansPage({trips}) {
+  const [tripsData, setTripsData] = useState(trips);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

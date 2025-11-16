@@ -11,7 +11,8 @@ const bookingsData = [
   { id: "BK005", user: "Jessica Lee", host: "Priya Sharma", date: "2024-03-25", status: "Confirmed", payment: "Paid", amount: "$220" },
 ];
 
-export default function BookingsPage() {
+export default function BookingsPage({bookings}) {
+  const [bookingsData, setBookingsData] = useState(bookings);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 

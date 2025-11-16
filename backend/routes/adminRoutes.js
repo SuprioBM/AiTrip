@@ -1,39 +1,30 @@
 import express from "express";
-import Trip from "../models/Trip.js";
-import Location from "../models/Location.js";
 import { protect, authorize } from "../middleware/auth.js";
+import {
+  getAll,
+  getOne,
+  createOne,
+  updateOne,
+  deleteOne,
+  getAllDashboardData,
+} from "../controllers/adminController.js";
+
 
 const router = express.Router();
 
-// Analytics: trip count
-router.get(
-  "/stats/trips-count",
-  protect,
-  authorize("admin"),
-  async (req, res, next) => {
-    try {
-      const count = await Trip.countDocuments();
-      res.json({ trips: count });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+// Protect all routes and allow only admin
+router.use(protect);
+router.use(authorize("admin"));
 
-// Analytics: popular locations (simple example)
-router.get(
-  "/stats/popular-locations",
-  protect,
-  authorize("admin"),
-  async (req, res, next) => {
-    try {
-      // In real app compute from trips / bookings. Here return all locations as placeholder.
-      const locations = await Location.find().limit(10);
-      res.json({ popular: locations });
-    } catch (err) {
-      next(err);
-    }
-  }
-);
+// Dashboard route: fetch all collections at once
+router.get("/stats/all", getAllDashboardData);
+
+// Dynamic admin CRUD routes
+// collection is dynamic, e.g., "User", "Trip", "Booking"
+router.get("/:collection", getAll); // GET all docs
+router.get("/:collection/:id", getOne); // GET one doc
+router.post("/:collection", createOne); // CREATE
+router.put("/:collection/:id", updateOne); // UPDATE
+router.delete("/:collection/:id", deleteOne); // DELETE
 
 export default router;
