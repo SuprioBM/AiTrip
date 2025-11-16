@@ -24,12 +24,20 @@ export default function Dashboard() {
       <p className="text-lg mb-6">
         Welcome, <span className="text-red-500">{user.email}</span>!
       </p>
-      <button
-        onClick={handleLogout}
-        className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition"
-      >
-        Logout
-      </button>
+      <div className="flex gap-4">
+        <button
+          onClick={() => navigate("/admin")}
+          className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition"
+        >
+          Admin
+        </button>
+        <button
+          onClick={handleLogout}
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-6 rounded-lg transition"
+        >
+          Logout
+        </button>
+      </div>
     </div>
   );
 }
