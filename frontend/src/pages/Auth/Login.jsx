@@ -148,7 +148,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Gmail Sign-In */}
             <div className="flex flex-col gap-3">
               {/* GitHub */}
               <button
