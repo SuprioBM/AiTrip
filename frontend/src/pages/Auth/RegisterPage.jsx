@@ -3,9 +3,11 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, User, Chrome, CheckCircle2 } from "lucide-react";
 import API from "../../api";
+import { useAuth } from "../../context/AuthContext";
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const { signInWithOAuth } = useAuth();
 
   // Form states
   const [showPassword, setShowPassword] = useState(false);
@@ -269,9 +271,7 @@ const handleVerification = async (e) => {
         {/* GitHub */}
         <button
           type="button"
-          onClick={() =>
-            (window.location.href = `http://localhost:5000/api/auth/oauth/github`)
-          }
+          onClick={() => signInWithOAuth("github")}
           className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
         >
           <svg
@@ -287,9 +287,7 @@ const handleVerification = async (e) => {
         {/* Google */}
         <button
           type="button"
-          onClick={() =>
-            (window.location.href = `http://localhost:5000/api/auth/oauth/google`)
-          }
+          onClick={() => signInWithOAuth("google")}
           className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
         >
           <Chrome className="w-5 h-5 text-gray-400" />

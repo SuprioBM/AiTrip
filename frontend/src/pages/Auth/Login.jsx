@@ -1,9 +1,13 @@
 import React, { useState } from "react";
+import { supabase } from "../../utils/supabase";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import API from "../../api";
 import { Mail, Lock, Eye, EyeOff, Chrome, LockIcon } from "lucide-react";
 import RegisterPage from "./RegisterPage";
+
+
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState("login");
@@ -11,7 +15,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState("");
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login,signInWithOAuth } = useAuth();
   
   // TODO: fix the color contrast issues in dark mode
   const handleSubmit = async (e) => {
@@ -152,9 +156,7 @@ export default function LoginPage() {
               {/* GitHub */}
               <button
                 type="button"
-                onClick={() =>
-                  (window.location.href = `http://localhost:5000/api/auth/oauth/github`)
-                }
+                onClick={() => signInWithOAuth("github")}
                 className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
               >
                 <svg
@@ -170,9 +172,7 @@ export default function LoginPage() {
               {/* Google */}
               <button
                 type="button"
-                onClick={() =>
-                  (window.location.href = `http://localhost:5000/api/auth/oauth/google`)
-                }
+                onClick={() => signInWithOAuth("google")}
                 className="w-full bg-black/40 hover:bg-gray-900 text-white border border-gray-700 hover:border-red-500 rounded-lg py-2 flex items-center justify-center gap-2 transition-all"
               >
                 <Chrome className="w-5 h-5 text-gray-400" />

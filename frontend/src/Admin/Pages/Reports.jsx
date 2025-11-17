@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Search, AlertCircle, CheckCircle } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
+import { useAdmin } from "../../context/AdminContext";
 
 // Mock reviews and reports data
 const reviewsReportsData = [
@@ -12,8 +13,9 @@ const reviewsReportsData = [
   { id: 5, type: "Review", user: "Jessica Lee", subject: "Amazing trip planning service", rating: 5, status: "Approved", date: "2024-02-11" },
 ];
 
-export default function ReviewsReportsPage({reviews}) {
-  const [reviewsReportsData, setReviewsReportsData] = useState(reviews);
+export default function ReviewsReportsPage() {
+  const { stats } = useAdmin();
+  const reviewsReportsData = stats?.reviewsReports || [];
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

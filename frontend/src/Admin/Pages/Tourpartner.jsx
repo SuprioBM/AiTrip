@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Search, ChevronDown, CheckCircle } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
+import { useAdmin } from "../../context/AdminContext";
 
 const partnersData = [
   { id: 1, name: "Global Adventures Co", rating: 4.7, status: "Verified", joinDate: "2023-06-15", tours: 24 },
@@ -11,8 +12,9 @@ const partnersData = [
   { id: 5, name: "Adventure Seekers", rating: 3.8, status: "Unverified", joinDate: "2024-02-01", tours: 5 },
 ];
 
-export default function TourPartnersPage({partners}) {
-  const [partnersData, setPartnersData] = useState(partners);
+export default function TourPartnersPage() {
+  const { stats } = useAdmin();
+  const partnersData = stats?.partners || [];
   const [selectedPartner, setSelectedPartner] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

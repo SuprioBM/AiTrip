@@ -1,9 +1,11 @@
 import React, { useState } from "react";
 import { ChevronDown } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SettingsPage() {
   const [darkMode, setDarkMode] = useState(false);
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const { user } = useAuth();
 
   return (
     <div className="space-y-8">
@@ -28,18 +30,7 @@ export default function SettingsPage() {
             </label>
             <input
               type="email"
-              defaultValue="admin@aitrip.com"
-              className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Full Name
-            </label>
-            <input
-              type="text"
-              defaultValue="Administrator"
+              defaultValue={user?.email || ""}
               className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -50,7 +41,7 @@ export default function SettingsPage() {
             </label>
             <input
               type="password"
-              defaultValue="••••••••"
+              defaultValue={user ? "********" : ""}
               className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Search, MapPin } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
+import { useAdmin } from "../../context/AdminContext";
 
 // Mock trip data
 const tripsData = [
@@ -12,8 +13,9 @@ const tripsData = [
   { id: "TP005", user: "Jessica Lee", destination: "Rome, Italy", budget: "$2,200", generated: "2024-02-11", duration: "6 days" },
 ];
 
-export default function TripPlansPage({trips}) {
-  const [tripsData, setTripsData] = useState(trips);
+export default function TripPlansPage() {
+  const { stats } = useAdmin();
+  const tripsData = stats?.trips || [];
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Search, Star, ChevronDown } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
+import { useAdmin } from "../../context/AdminContext";
 
 // Mock hosts data
 const hostsData = [
@@ -12,8 +13,9 @@ const hostsData = [
   { id: 5, name: "Priya Sharma", location: "Mumbai, India", rating: 4.9, availability: "Available", photo: "🇮🇳" },
 ];
 
-export default function LocalHostsPage({hosts}) {
-  const [hostsData, setHostsData] = useState(hosts);
+export default function LocalHostsPage() {
+  const { stats } = useAdmin();
+  const hostsData = stats?.hosts || [];
   const [selectedHost, setSelectedHost] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");

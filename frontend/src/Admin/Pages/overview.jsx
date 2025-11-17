@@ -2,6 +2,7 @@ import React,{useState} from "react";
 import { Users, MapPin, Home, Calendar, Users2 } from "lucide-react";
 import StatCard from "../../components/ui/stat-card";
 import ChartCard from "../../components/ui/chart-card";
+import { useAdmin } from "../../context/AdminContext";
 
 // Chart Components
 const TripsChartData = () => (
@@ -66,15 +67,16 @@ const activityData = [
   { id: 4, type: "Host Onboarded", description: "New local host from Tokyo registered", time: "3 hours ago" },
 ];
 
-export default function OverviewPage({stats}) {
-   const [statsData, setStatsdata] = useState({
-     totalUsers: stats.users.length || 0,
-     verifiedUsers: stats.users.filter(u => u.isVerified === true).length ||0,
-     totalTrips: stats.trips.length ||0,
-     activeBookings: stats.bookings.length  ||0,
-     totalHosts: stats.hosts.length ||0,
-     tourPartners: stats.partners.length  ||0,
-   });
+export default function OverviewPage() {
+  const { stats } = useAdmin();
+  const statsData = {
+    totalUsers: stats?.users?.length || 0,
+    verifiedUsers: stats?.users?.filter((u) => u.isVerified)?.length || 0,
+    totalTrips: stats?.trips?.length || 0,
+    activeBookings: stats?.bookings?.length || 0,
+    totalHosts: stats?.hosts?.length || 0,
+    tourPartners: stats?.partners?.length || 0,
+  };
   return (
     <div className="space-y-8 p-4">
       {/* Header */}

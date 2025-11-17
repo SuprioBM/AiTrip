@@ -106,7 +106,6 @@ export const deleteOne = async (req, res, next) => {
   try {
     const { collection, id } = req.params;
     const Model = getModel(collection);
-    console.log(collection,id,Model);
     
     if (!Model) return res.status(400).json({ message: "Invalid collection" });
 

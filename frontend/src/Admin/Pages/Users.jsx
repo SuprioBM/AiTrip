@@ -2,17 +2,17 @@ import React, { useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
-import { deleteDocument } from "../../utils/adminControl";
+import { useAdmin } from "../../context/AdminContext";
 
 
-export default function UsersManagementPage({users}) {
-  const [userList, setUserList] = useState(users); 
+export default function UsersManagementPage() {
+  const { stats, removeItem } = useAdmin();
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
 
-  const filteredUsers = userList.filter(
+  const filteredUsers = stats?.users?.filter(
     (user) =>
       (user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase())) &&
@@ -22,11 +22,6 @@ export default function UsersManagementPage({users}) {
   const handleViewUser = (user) => {
     setSelectedUser(user);
     setModalOpen(true);
-  };
-
-
-  const handleUserDeleted = (id) => {
-    setUserList((prev) => prev.filter((u) => u._id !== id));
   };
 
   
@@ -66,7 +61,7 @@ export default function UsersManagementPage({users}) {
     {
       label: "Remove",
       className: "bg-red-100 text-red-700 hover:bg-red-200",
-      onClick: (user) => deleteDocument("User", user._id, handleUserDeleted),
+      onClick: (user) => removeItem("User", user._id),
     },
   ];
 

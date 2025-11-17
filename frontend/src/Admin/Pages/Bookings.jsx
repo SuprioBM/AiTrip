@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Search, ChevronDown } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
+import { useAdmin } from "../../context/AdminContext";
 
 // Mock bookings data
 const bookingsData = [
@@ -11,8 +12,9 @@ const bookingsData = [
   { id: "BK005", user: "Jessica Lee", host: "Priya Sharma", date: "2024-03-25", status: "Confirmed", payment: "Paid", amount: "$220" },
 ];
 
-export default function BookingsPage({bookings}) {
-  const [bookingsData, setBookingsData] = useState(bookings);
+export default function BookingsPage() {
+  const { stats } = useAdmin();
+  const bookingsData = stats?.bookings || [];
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
 
