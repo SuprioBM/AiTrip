@@ -31,6 +31,8 @@ export const AuthProvider = ({ children }) => {
   // Supabase OAuth login
   // ----------------------
  const signInWithOAuth = async (provider) => {
+  console.log(import.meta.env.VITE_REDIRECT_URL);
+  
    const { data, error } = await supabase.auth.signInWithOAuth({
      provider,
      options: {
