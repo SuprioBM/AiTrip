@@ -30,10 +30,16 @@ export const AuthProvider = ({ children }) => {
   // ----------------------
   // Supabase OAuth login
   // ----------------------
-  const signInWithOAuth = async (provider) => {
-    await supabase.auth.signInWithOAuth({ provider });
-    // Redirect handled automatically by Supabase
-  };
+ const signInWithOAuth = async (provider) => {
+   const { data, error } = await supabase.auth.signInWithOAuth({
+     provider,
+     options: {
+       redirectTo: import.meta.env.VITE_REDIRECT_URL, // <-- production URL
+     },
+   });
+
+   if (error) console.error(error);
+ };
 
   // ----------------------
   // Sync Supabase OAuth users to backend MongoDB
