@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Sidebar from "./Sidebar";
-import TopNav from "./Topnav";
+import TopNav from "./topnav";
 
 export default function DashboardLayout({ currentPage, onPageChange, children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
