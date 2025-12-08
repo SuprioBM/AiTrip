@@ -2,11 +2,14 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "./pages/Auth/Login.jsx";
 import OAuthCallback from "./pages/Auth/Oauth.jsx";
-import Dashboard from "./pages/Dashboard/dashboard.jsx";
+// import Dashboard from "./pages/Dashboard/dashboard.jsx";
+
 import AdminRoute from "./Admin/Adminroute.jsx";
 import { useAuth } from "./context/AuthContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
 import { Toaster } from "sonner";
+import BookingPage from './pages/BookingPage.jsx';
+import HomePage from './pages/Home/Home'
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -21,7 +24,7 @@ const App = () => {
           path="/"
           element={
             user ? (
-              <Navigate to="/dashboard" replace />
+              <Navigate to="/HomePage" replace />
             ) : (
               <Navigate to="/login" replace />
             )
@@ -30,8 +33,12 @@ const App = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/oauth" element={<OAuthCallback />} />
         <Route
-          path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" replace />}
+          path="/HomePage"
+          element={user ? <HomePage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/booking"
+          element={user ? <BookingPage /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/admin"
