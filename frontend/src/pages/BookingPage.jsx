@@ -1,155 +1,176 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import MapComponent from '../pages/Home/MapComponent';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import MapComponent from "../components/MapComponent";
+import API from "../api";
 
 export default function BookingPage() {
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phone: '',
-    destination: '',
-    travelDate: '',
-    numberOfPeople: 1,
-    specialRequests: ''
+    location: "",
+    travelDate: "",
+    budget: "medium",
   });
 
-  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [mapMarkers, setMapMarkers] = useState([]); // All places, restaurants, hotels
+  const [activeCategory, setActiveCategory] = useState("all"); // Filter category
+  const [loadingAI, setLoadingAI] = useState(false);
+  const [stats, setStats] = useState({ places: 0, restaurants: 0, hotels: 0 });
 
-  // Destination coordinates
-  const destinations = {
-    'Santorini, Greece': { lat: 36.3932, lng: 25.4615 },
-    'Bali, Indonesia': { lat: -8.3405, lng: 115.0920 },
-    'Kerala, India': { lat: 10.8505, lng: 76.2711 },
-    'Maldives': { lat: 3.2028, lng: 73.2207 },
-    'Thailand': { lat: 13.7563, lng: 100.5018 },
-    'Machu Picchu, Peru': { lat: -13.1631, lng: -72.5450 },
-    'Petra, Jordan': { lat: 30.3285, lng: 35.4444 },
-    'Capri, Italy': { lat: 40.5508, lng: 14.2417 },
-    'Bora Bora, Polynesia': { lat: -16.5004, lng: -151.7415 }
-  };
-
+  // Handle input changes
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
+  };
 
-    // Update map when destination changes
-    if (name === 'destination' && destinations[value]) {
-      setSelectedDestination(destinations[value]);
+  // Submit and call backend
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    setLoadingAI(true);
+    setMapMarkers([]);
+    setStats({ places: 0, restaurants: 0, hotels: 0 });
+
+    try {
+      const { data } = await API.post("/ai/trip-suggestions", {
+        location: formData.location,
+        budget: formData.budget,
+        include: ["places", "restaurants", "hotels"],
+      });
+
+      console.log("Backend Response:", data);
+
+      if (data.success) {
+        // Set map center
+        setSelectedLocation({
+          lat: data.center.lat,
+          lng: data.center.lng,
+        });
+
+        // Combine all markers with categories
+        const allMarkers = [];
+
+        // Add places
+        if (data.places && Array.isArray(data.places)) {
+          data.places.forEach((place) => {
+            allMarkers.push({
+              id: `place_${place.name}`,
+              name: place.name,
+              description: place.shortDescription || "",
+              photos: place.photos || [],
+              location: place.location,
+              category: "place",
+              categoryLabel: "🏛️ Attraction",
+              wikipediaUrl: place.wikipediaUrl,
+            });
+          });
+        }
+
+        // Add restaurants
+        if (data.restaurants && Array.isArray(data.restaurants)) {
+          data.restaurants.forEach((restaurant) => {
+            allMarkers.push({
+              id: `restaurant_${restaurant.name}`,
+              name: restaurant.name,
+              description: `${restaurant.cuisine} • ${
+                restaurant.shortDescription || ""
+              }`,
+              photos: restaurant.photos || [],
+              location: restaurant.location,
+              category: "restaurant",
+              categoryLabel: "🍽️ Restaurant",
+              budget: restaurant.inferred_budget,
+            });
+          });
+        }
+
+        // Add hotels
+        if (data.hotels && Array.isArray(data.hotels)) {
+          data.hotels.forEach((hotel) => {
+            allMarkers.push({
+              id: `hotel_${hotel.name}`,
+              name: hotel.name,
+              description: hotel.shortDescription || "",
+              photos: hotel.photos || [],
+              location: hotel.location,
+              category: "hotel",
+              categoryLabel: "🏨 Hotel",
+              stars: hotel.stars,
+            });
+          });
+        }
+
+        setMapMarkers(allMarkers);
+        setStats({
+          places: data.places?.length || 0,
+          restaurants: data.restaurants?.length || 0,
+          hotels: data.hotels?.length || 0,
+        });
+
+        console.log(`✅ Loaded ${allMarkers.length} markers on map`);
+      } else {
+        console.error("Backend error:", data.message);
+      }
+    } catch (error) {
+      console.error("AI suggestion error:", error);
+      alert("Failed to get suggestions. Please try again.");
+    } finally {
+      setLoadingAI(false);
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Booking submitted:', formData);
-    alert('Thank you! Your booking request has been submitted. We will contact you soon!');
+  // Filter markers by category
+  const getFilteredMarkers = () => {
+    if (activeCategory === "all") return mapMarkers;
+    return mapMarkers.filter((m) => m.category === activeCategory);
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#00C9A7] to-[#00A3E1] py-16 px-4">
+    <div className="min-h-screen bg-white py-23 px-4">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Book Your Dream Journey
+          <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
+            Plan Your Trip
           </h1>
-          <p className="text-xl text-white/90">
-            Fill in your details and let us plan the perfect adventure for you
+          <p className="text-xl text-black">
+            Enter your location, date, and budget to get AI trip suggestions
           </p>
         </motion.div>
 
-        {/* Main Content Grid */}
+        {/* Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Booking Form */}
+          {/* Form */}
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8"
+            className="bg-white/95 rounded-3xl shadow-2xl p-8"
           >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Booking Information</h2>
-            
             <form onSubmit={handleSubmit} className="space-y-5">
-              
-              {/* Full Name */}
+              {/* Location */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Full Name *
+                <label className="block text-sm font-semibold mb-2">
+                  Location *
                 </label>
                 <input
                   type="text"
-                  name="fullName"
-                  value={formData.fullName}
+                  name="location"
+                  value={formData.location}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors"
-                  placeholder="John Doe"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                  placeholder="Enter a city or place"
                 />
               </div>
 
-              {/* Email */}
+              {/* Travel date */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Email Address *
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors"
-                  placeholder="john@example.com"
-                />
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors"
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-
-              {/* Destination */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Preferred Destination *
-                </label>
-                <select
-                  name="destination"
-                  value={formData.destination}
-                  onChange={handleChange}
-                  required
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors"
-                >
-                  <option value="">Select a destination</option>
-                  {Object.keys(destinations).map(dest => (
-                    <option key={dest} value={dest}>{dest}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Travel Date */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                <label className="block text-sm font-semibold mb-2">
                   Travel Date *
                 </label>
                 <input
@@ -158,81 +179,144 @@ export default function BookingPage() {
                   value={formData.travelDate}
                   onChange={handleChange}
                   required
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors"
+                  min={new Date().toISOString().split("T")[0]}
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
                 />
               </div>
 
-              {/* Number of People */}
+              {/* Budget */}
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Number of Travelers *
+                <label className="block text-sm font-semibold mb-2">
+                  Budget *
                 </label>
-                <input
-                  type="number"
-                  name="numberOfPeople"
-                  value={formData.numberOfPeople}
+                <select
+                  name="budget"
+                  value={formData.budget}
                   onChange={handleChange}
-                  required
-                  min="1"
-                  max="20"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors"
-                />
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
               </div>
 
-              {/* Special Requests */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Special Requests (Optional)
-                </label>
-                <textarea
-                  name="specialRequests"
-                  value={formData.specialRequests}
-                  onChange={handleChange}
-                  rows="4"
-                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:outline-none transition-colors resize-none"
-                  placeholder="Any special requirements or preferences..."
-                />
-              </div>
-
-              {/* Submit Button */}
+              {/* Submit */}
               <motion.button
                 type="submit"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full bg-gradient-to-r from-teal-500 to-blue-500 text-white py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                disabled={loadingAI}
+                whileHover={{ scale: loadingAI ? 1 : 1.02 }}
+                className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition-all ${
+                  loadingAI
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-teal-500 to-blue-500 text-white"
+                }`}
               >
-                Submit Booking Request
+                {loadingAI ? "Loading..." : "Get Suggestions"}
               </motion.button>
             </form>
-          </motion.div>
 
-          {/* Map Section */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-8"
-          >
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Destination Map</h2>
-            
-            <div className="rounded-2xl overflow-hidden shadow-lg h-[600px] lg:h-[calc(100%-4rem)]">
-              <MapComponent selectedLocation={selectedDestination} />
-            </div>
-
-            {formData.destination && (
+            {/* Stats */}
+            {stats.places + stats.restaurants + stats.hotels > 0 && (
               <motion.div
-                initial={{ opacity: 0, y: 10 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-6 p-4 bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl"
+                className="mt-6 grid grid-cols-3 gap-4"
               >
-                <p className="text-sm font-semibold text-gray-700">
-                  📍 Selected Destination: <span className="text-teal-600">{formData.destination}</span>
-                </p>
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl text-center">
+                  <div className="text-3xl font-bold text-purple-600">
+                    {stats.places}
+                  </div>
+                  <div className="text-sm text-purple-700">Places</div>
+                </div>
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl text-center">
+                  <div className="text-3xl font-bold text-orange-600">
+                    {stats.restaurants}
+                  </div>
+                  <div className="text-sm text-orange-700">Restaurants</div>
+                </div>
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl text-center">
+                  <div className="text-3xl font-bold text-blue-600">
+                    {stats.hotels}
+                  </div>
+                  <div className="text-sm text-blue-700">Hotels</div>
+                </div>
               </motion.div>
             )}
           </motion.div>
 
+          {/* Map */}
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-white/95 rounded-3xl shadow-2xl p-8"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Destination Map</h2>
+
+              {/* Category Filter */}
+              {mapMarkers.length > 0 && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setActiveCategory("all")}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      activeCategory === "all"
+                        ? "bg-teal-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory("place")}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      activeCategory === "place"
+                        ? "bg-purple-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    🏛️
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory("restaurant")}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      activeCategory === "restaurant"
+                        ? "bg-orange-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    🍽️
+                  </button>
+                  <button
+                    onClick={() => setActiveCategory("hotel")}
+                    className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
+                      activeCategory === "hotel"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    🏨
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="rounded-2xl overflow-hidden shadow-lg h-[600px]">
+              <MapComponent
+                center={selectedLocation}
+                markers={getFilteredMarkers()}
+              />
+            </div>
+
+            {loadingAI && (
+              <div className="mt-4 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-teal-500 border-t-transparent"></div>
+                <p className="mt-2 text-gray-500">
+                  Generating trip suggestions...
+                </p>
+              </div>
+            )}
+          </motion.div>
         </div>
       </div>
     </div>

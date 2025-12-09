@@ -12,6 +12,7 @@ import partnerRoutes from "./routes/partnerRoutes.js";
 import reviewRoutes from "./routes/reviewRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import { errorHandler } from "./middleware/errorHandler.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 dotenv.config();
 const app = express();
@@ -33,7 +34,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/partners", partnerRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
-
+app.use("/api/ai", aiRoutes);
 // Error handler
 app.use(errorHandler);
 
