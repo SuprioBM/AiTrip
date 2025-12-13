@@ -1,22 +1,23 @@
 import express from "express";
 import {
-  createTrip,
-  getTrips,
-  getTrip,
-  updateTrip,
+  saveTrip,
+  getUserTrips,
+  getTripByPlace,
   deleteTrip,
 } from "../controllers/tripController.js";
-// import { generateItinerary } from "../controllers/aiController.js";
-import { protect, authorize } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.route("/").get(protect, getTrips).post(protect, createTrip);
-router.post("/generate", protect); // AI generation endpoint
-router
-  .route("/:id")
-  .get(protect, getTrip)
-  .put(protect, updateTrip)
-  .delete(protect, deleteTrip);
+// Save or update trip
+router.post("/", saveTrip);
+
+// Get all trips of user
+router.get("/", getUserTrips);
+
+// Get a trip for specific location (with localhost & partner-up)
+router.get("/:placeId", getTripByPlace);
+
+// Delete a trip
+router.delete("/:placeId", deleteTrip);
 
 export default router;

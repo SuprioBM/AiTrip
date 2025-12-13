@@ -1,20 +1,110 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import MapComponent from "../components/MapComponent";
 import API from "../api";
 
+// Check for refresh BEFORE component renders
+const checkAndClearOnRefresh = () => {
+  const navigationEntries = performance.getEntriesByType("navigation");
+  const wasRefreshed =
+    navigationEntries.length > 0 && navigationEntries[0].type === "reload";
+
+  if (wasRefreshed) {
+    // Clear all booking data on refresh
+    sessionStorage.removeItem("booking_formData");
+    sessionStorage.removeItem("booking_selectedLocation");
+    sessionStorage.removeItem("booking_mapMarkers");
+    sessionStorage.removeItem("booking_activeCategory");
+    sessionStorage.removeItem("booking_stats");
+    return true; // Was refreshed
+  }
+  return false; // Normal navigation
+};
+
+// Run check before component definition
+const wasPageRefreshed = checkAndClearOnRefresh();
+
 export default function BookingPage() {
-  const [formData, setFormData] = useState({
-    location: "",
-    travelDate: "",
-    budget: "medium",
+  // Initialize from sessionStorage (will be empty if refreshed)
+  const [formData, setFormData] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("booking_formData");
+      return saved
+        ? JSON.parse(saved)
+        : {
+            location: "",
+            travelDate: "",
+            budget: "medium",
+          };
+    } catch {
+      return {
+        location: "",
+        travelDate: "",
+        budget: "medium",
+      };
+    }
   });
 
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [mapMarkers, setMapMarkers] = useState([]); // All places, restaurants, hotels
-  const [activeCategory, setActiveCategory] = useState("all"); // Filter category
+  const [selectedLocation, setSelectedLocation] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("booking_selectedLocation");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [mapMarkers, setMapMarkers] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("booking_mapMarkers");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [activeCategory, setActiveCategory] = useState(() => {
+    return sessionStorage.getItem("booking_activeCategory") || "all";
+  });
+
   const [loadingAI, setLoadingAI] = useState(false);
-  const [stats, setStats] = useState({ places: 0, restaurants: 0, hotels: 0 });
+
+  const [stats, setStats] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("booking_stats");
+      return saved
+        ? JSON.parse(saved)
+        : { places: 0, restaurants: 0, hotels: 0 };
+    } catch {
+      return { places: 0, restaurants: 0, hotels: 0 };
+    }
+  });
+
+  // Save to sessionStorage whenever state changes
+  useEffect(() => {
+    sessionStorage.setItem("booking_formData", JSON.stringify(formData));
+  }, [formData]);
+
+  useEffect(() => {
+    if (selectedLocation) {
+      sessionStorage.setItem(
+        "booking_selectedLocation",
+        JSON.stringify(selectedLocation)
+      );
+    }
+  }, [selectedLocation]);
+
+  useEffect(() => {
+    sessionStorage.setItem("booking_mapMarkers", JSON.stringify(mapMarkers));
+  }, [mapMarkers]);
+
+  useEffect(() => {
+    sessionStorage.setItem("booking_activeCategory", activeCategory);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    sessionStorage.setItem("booking_stats", JSON.stringify(stats));
+  }, [stats]);
 
   // Handle input changes
   const handleChange = (e) => {
@@ -40,11 +130,10 @@ export default function BookingPage() {
         include: ["places", "restaurants", "hotels"],
       });
 
-      console.log("Backend Response:", data);
-
       if (data.success) {
         // Set map center
         setSelectedLocation({
+          name: data.location,
           lat: data.center.lat,
           lng: data.center.lng,
         });
@@ -119,6 +208,25 @@ export default function BookingPage() {
     } finally {
       setLoadingAI(false);
     }
+  };
+
+  // Clear session storage (optional - call after booking complete)
+  const clearBookingData = () => {
+    sessionStorage.removeItem("booking_formData");
+    sessionStorage.removeItem("booking_selectedLocation");
+    sessionStorage.removeItem("booking_mapMarkers");
+    sessionStorage.removeItem("booking_activeCategory");
+    sessionStorage.removeItem("booking_stats");
+
+    setFormData({
+      location: "",
+      travelDate: "",
+      budget: "medium",
+    });
+    setSelectedLocation(null);
+    setMapMarkers([]);
+    setActiveCategory("all");
+    setStats({ places: 0, restaurants: 0, hotels: 0 });
   };
 
   // Filter markers by category
@@ -301,7 +409,7 @@ export default function BookingPage() {
               )}
             </div>
 
-            <div className="rounded-2xl overflow-hidden shadow-lg h-[600px]">
+            <div className="rounded-2xl overflow-hidden shadow-lg max-h-[4000px]">
               <MapComponent
                 center={selectedLocation}
                 markers={getFilteredMarkers()}

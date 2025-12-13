@@ -35,6 +35,9 @@ app.use("/api/partners", partnerRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/ai", aiRoutes);
+app.use("/api/localhosts", hostRoutes);
+app.use("/api/partner-ups", partnerRoutes);
+app.use("/api/trip", tripRoutes);
 // Error handler
 app.use(errorHandler);
 

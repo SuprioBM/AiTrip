@@ -1,13 +1,13 @@
 import User from "../models/User.js";
 import Trip from "../models/Trip.js";
 import Review from "../models/Review.js";
-import Partner from "../models/Partner.js";
+import {PartnerUp} from "../models/Partner.js";
 import Location from "../models/Location.js";
 import Host from "../models/Host.js";
 import Booking from "../models/Booking.js";
 
 // Utility to get model by name
-const models = { User, Trip, Review, Partner, Location, Host, Booking };
+const models = { User, Trip, Review, PartnerUp, Location, Host, Booking };
 const getModel = (name) => models[name];
 
 
