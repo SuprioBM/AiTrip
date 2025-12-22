@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 
 const partnerUpSchema = new mongoose.Schema({
   placeId: {
-    type: String, // external place id OR lat-lng hash
+    type: String,
     required: true,
     index: true,
   },
@@ -25,6 +25,32 @@ const partnerUpSchema = new mongoose.Schema({
   maxMembers: {
     type: Number,
     required: true,
+  },
+
+  numberOfPeople: Number,
+
+  budgetRange: {
+    min: Number,
+    max: Number,
+  },
+
+  numberOfDays: Number,
+
+  startDate: Date,
+  endDate: Date,
+
+  // ✅ GEOJSON LOCATION (FIX)
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+      required: true,
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      required: true,
+    },
   },
 
   status: {
@@ -57,6 +83,16 @@ const partnerUpMemberSchema = new mongoose.Schema({
     required: true,
   },
 
+  // Snapshot of place for this member's request (helps know exact place they joined for)
+  placeName: {
+    type: String,
+  },
+
+  location: {
+    lat: Number,
+    lon: Number,
+  },
+
   role: {
     type: String,
     enum: ["creator", "member"],
@@ -80,7 +116,9 @@ const partnerUpMemberSchema = new mongoose.Schema({
 ========================= */
 
 // Prevent same user joining same partner-up twice
+partnerUpSchema.index({ location: "2dsphere" });
 partnerUpMemberSchema.index({ partnerUp: 1, user: 1 }, { unique: true });
+
 
 /* =========================
    Exports

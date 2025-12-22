@@ -1,8 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "../context/AuthContext";
 import MapComponent from "../components/MapComponent";
 import API from "../api";
-import { Plus, X, Users, Calendar, DollarSign, Clock } from "lucide-react";
+import {
+  Plus,
+  X,
+  Users,
+  Calendar,
+  DollarSign,
+  Clock,
+  
+} from "lucide-react";
 
 // Check for refresh BEFORE component renders
 const checkAndClearOnRefresh = () => {
@@ -26,6 +35,9 @@ const checkAndClearOnRefresh = () => {
 const wasPageRefreshed = checkAndClearOnRefresh();
 
 export default function BookingPage() {
+  const { user } = useAuth();
+  console.log(user);
+  
   // Initialize from sessionStorage (will be empty if refreshed)
   const [formData, setFormData] = useState(() => {
     try {
@@ -93,6 +105,59 @@ export default function BookingPage() {
   const [matchingPartners, setMatchingPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [myPartnerUp, setMyPartnerUp] = useState(null);
+  
+
+  const searchPartners = async (lat, lon) => {
+    // Search partner-ups by coordinates (preferred) or by selectedLocation
+    const useLat = typeof lat === "number" || (lat && !isNaN(Number(lat)));
+    const useLon = typeof lon === "number" || (lon && !isNaN(Number(lon)));
+
+    // If no explicit coords passed, fall back to selectedLocation
+    if (!useLat || !useLon) {
+      if (!selectedLocation) return;
+    }
+
+    setLoadingPartners(true);
+    try {
+      const token = localStorage.getItem("token");
+
+      const placeId =
+        useLat && useLon
+          ? `${lat}_${lon}`
+          : `${selectedLocation.lat}_${selectedLocation.lng}`;
+
+      const payload = {
+        placeId,
+        location:
+          useLat && useLon
+            ? { lat: Number(lat), lon: Number(lon) }
+            : { lat: selectedLocation.lat, lon: selectedLocation.lng },
+      };
+
+      // Add dates if available
+      if (formData.travelDate) {
+        payload.startDate = formData.travelDate;
+        payload.endDate = formData.travelDate;
+      }
+
+      console.log("Searching for partners with:", payload);
+
+      const { data } = await API.post("/partnerup/search", payload, {
+        headers: { Authorization: token ? `Bearer ${token}` : undefined },
+      });
+
+      if (data && data.success) {
+        setMatchingPartners(data.data || []);
+      } else {
+        setMatchingPartners([]);
+      }
+    } catch (error) {
+      console.error("Error searching partners:", error);
+      setMatchingPartners([]);
+    } finally {
+      setLoadingPartners(false);
+    }
+  };
 
   // Save to sessionStorage whenever state changes
   useEffect(() => {
@@ -143,6 +208,7 @@ export default function BookingPage() {
         budget: formData.budget,
         include: ["places", "restaurants", "hotels"],
       });
+      console.log(data);
 
       if (data.success) {
         // Set map center
@@ -211,7 +277,8 @@ export default function BookingPage() {
           restaurants: data.restaurants?.length || 0,
           hotels: data.hotels?.length || 0,
         });
-
+        //call partnerup search fucntion here based on coordinates lat-lan , if exist then it will show on the partnerup section
+        searchPartners();
         console.log(`✅ Loaded ${allMarkers.length} markers on map`);
       } else {
         console.error("Backend error:", data.message);
@@ -254,9 +321,10 @@ export default function BookingPage() {
     const { name, value } = e.target;
     setPartnerUpData((prev) => ({
       ...prev,
-      [name]: name.includes("budget") || name.includes("number")
-        ? parseInt(value) || 0
-        : value,
+      [name]:
+        name.includes("budget") || name.includes("number")
+          ? parseInt(value) || 0
+          : value,
     }));
   };
 
@@ -309,35 +377,22 @@ export default function BookingPage() {
     }
   };
 
-  // Search for matching partners
-  const searchPartners = async () => {
-    if (!selectedLocation) return;
+  // Search for matching partners is implemented above (supports coords or selectedLocation)
 
-    setLoadingPartners(true);
+  // Send partner request (include place snapshot)
+  const handleSendPartnerRequest = async (partnerUpId, partner) => {
     try {
       const token = localStorage.getItem("token");
-      
-      // Use same placeId format as when creating
-      const placeId = `${selectedLocation.lat}_${selectedLocation.lng}`;
-      
+
       const payload = {
-        placeId: placeId,
-        location: {
-          lat: selectedLocation.lat,
-          lon: selectedLocation.lng,
-        },
+        placeName: (partner && partner.placeName) || (selectedLocation && selectedLocation.name),
+        location:
+          (partner && partner.location) ||
+          (selectedLocation && { lat: selectedLocation.lat, lon: selectedLocation.lng }),
       };
 
-      // Add dates if available
-      if (formData.travelDate) {
-        payload.startDate = formData.travelDate;
-        payload.endDate = formData.travelDate;
-      }
-
-      console.log("Searching for partners with:", payload);
-
       const { data } = await API.post(
-        "/partnerup/search",
+        `/partnerup/request/${partnerUpId}`,
         payload,
         {
           headers: {
@@ -346,33 +401,7 @@ export default function BookingPage() {
         }
       );
 
-      if (data.success) {
-        console.log("Found matching partners:", data.data);
-        setMatchingPartners(data.data);
-      }
-    } catch (error) {
-      console.error("Error searching partners:", error);
-      // Don't show error to user, just log it
-    } finally {
-      setLoadingPartners(false);
-    }
-  };
-
-  // Send partner request
-  const handleSendPartnerRequest = async (partnerUpId) => {
-    try {
-      const token = localStorage.getItem("token");
-      const { data } = await API.post(
-        `/partnerup/request/${partnerUpId}`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (data.success) {
+      if (data && data.success) {
         alert("Partner request sent successfully!");
       }
     } catch (error) {
@@ -395,6 +424,8 @@ export default function BookingPage() {
     }
   }, [formData.travelDate]);
 
+  
+
   return (
     <div className="min-h-screen bg-white py-23 px-4">
       <div className="max-w-7xl mx-auto">
@@ -403,9 +434,11 @@ export default function BookingPage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
-            Plan Your Trip
-          </h1>
+          <div className="flex items-center justify-center gap-4">
+            <h1 className="text-4xl md:text-5xl font-bold text-black mb-4">
+              Plan Your Trip
+            </h1>
+          </div>
           <p className="text-xl text-black">
             Enter your location, date, and budget to get AI trip suggestions
           </p>
@@ -548,7 +581,10 @@ export default function BookingPage() {
                     </div>
                     <div className="space-y-1 text-sm text-teal-800">
                       <p>👥 {myPartnerUp.numberOfPeople} people</p>
-                      <p>💰 ${myPartnerUp.budgetRange.min} - ${myPartnerUp.budgetRange.max}</p>
+                      <p>
+                        💰 ${myPartnerUp.budgetRange.min} - $
+                        {myPartnerUp.budgetRange.max}
+                      </p>
                       <p>📅 {myPartnerUp.numberOfDays} days</p>
                     </div>
                   </div>
@@ -563,7 +599,8 @@ export default function BookingPage() {
                   ) : matchingPartners.length > 0 ? (
                     <>
                       <p className="text-sm text-gray-600 mb-2">
-                        Found {matchingPartners.length} potential travel partner(s)
+                        Found {matchingPartners.length} potential travel
+                        partner(s)
                       </p>
                       {matchingPartners.map((partner) => (
                         <div
@@ -589,12 +626,16 @@ export default function BookingPage() {
                                 </p>
                               </div>
                             </div>
-                            <button
-                              onClick={() => handleSendPartnerRequest(partner._id)}
-                              className="w-8 h-8 flex items-center justify-center bg-teal-500 text-white rounded-full hover:bg-teal-600 transition"
-                            >
-                              <Plus className="w-5 h-5" />
-                            </button>
+                            {user.id !== partner.createdBy._id && (
+                              <button
+                                onClick={() =>
+                                  handleSendPartnerRequest(partner._id, partner)
+                                }
+                                className="w-8 h-8 flex items-center justify-center bg-teal-500 text-white rounded-full hover:bg-teal-600 transition"
+                              >
+                                <Plus className="w-5 h-5" />
+                              </button>
+                            )}
                           </div>
                           <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
                             <div className="flex items-center gap-1">
@@ -602,8 +643,9 @@ export default function BookingPage() {
                               {partner.numberOfPeople} people
                             </div>
                             <div className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3" />
-                              ${partner.budgetRange.min}-${partner.budgetRange.max}
+                              <DollarSign className="w-3 h-3" />$
+                              {partner.budgetRange.min}-$
+                              {partner.budgetRange.max}
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="w-3 h-3" />
@@ -818,7 +860,10 @@ export default function BookingPage() {
                     name="endDate"
                     value={partnerUpData.endDate}
                     onChange={handlePartnerUpChange}
-                    min={partnerUpData.startDate || new Date().toISOString().split("T")[0]}
+                    min={
+                      partnerUpData.startDate ||
+                      new Date().toISOString().split("T")[0]
+                    }
                     required
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
                   />
