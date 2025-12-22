@@ -9,7 +9,8 @@ import OAuthCallback from "./pages/Auth/Oauth.jsx";
 import HomePage from "./pages/Home/Home.jsx";
 import BookingPage from "./pages/BookingPage.jsx";
 import AdminRoute from "./Admin/Adminroute.jsx";
-import DetailsPage from "./pages/detailsPage.tsx";
+import DetailsPage from "./pages/detailsPage.jsx";
+import ReviewPage from "./pages/ReviewPage.jsx";
 
 import MainLayout from "./layouts/layout_1.jsx";
 import EmptyLayout from "./layouts/layout_0.jsx";
@@ -66,6 +67,11 @@ const App = () => {
             path="/details"
             element={user ? <DetailsPage /> : <Navigate to="/login" replace />}
           />
+          <Route
+            path="/reviews"
+            element={user ? <ReviewPage /> : <Navigate to="/login" replace />}
+          />
+
         </Route>
       </Routes>
     </>
