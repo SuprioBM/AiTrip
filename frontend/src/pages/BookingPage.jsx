@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import MapComponent from "../components/MapComponent";
 import API from "../api";
+import { Plus, X, Users, Calendar, DollarSign, Clock } from "lucide-react";
 
 // Check for refresh BEFORE component renders
 const checkAndClearOnRefresh = () => {
@@ -79,6 +80,19 @@ export default function BookingPage() {
       return { places: 0, restaurants: 0, hotels: 0 };
     }
   });
+
+  const [showPartnerUpForm, setShowPartnerUpForm] = useState(false);
+  const [partnerUpData, setPartnerUpData] = useState({
+    numberOfPeople: 2,
+    budgetMin: 1000,
+    budgetMax: 5000,
+    numberOfDays: 3,
+    startDate: "",
+    endDate: "",
+  });
+  const [matchingPartners, setMatchingPartners] = useState([]);
+  const [loadingPartners, setLoadingPartners] = useState(false);
+  const [myPartnerUp, setMyPartnerUp] = useState(null);
 
   // Save to sessionStorage whenever state changes
   useEffect(() => {
@@ -235,6 +249,152 @@ export default function BookingPage() {
     return mapMarkers.filter((m) => m.category === activeCategory);
   };
 
+  // Handle PartnerUp form changes
+  const handlePartnerUpChange = (e) => {
+    const { name, value } = e.target;
+    setPartnerUpData((prev) => ({
+      ...prev,
+      [name]: name.includes("budget") || name.includes("number")
+        ? parseInt(value) || 0
+        : value,
+    }));
+  };
+
+  // Create PartnerUp
+  const handleCreatePartnerUp = async (e) => {
+    e.preventDefault();
+
+    if (!selectedLocation) {
+      alert("Please search for a location first");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await API.post(
+        "/partnerup/create",
+        {
+          placeId: `${selectedLocation.lat}_${selectedLocation.lng}`,
+          placeName: selectedLocation.name,
+          location: {
+            lat: selectedLocation.lat,
+            lon: selectedLocation.lng,
+          },
+          numberOfPeople: partnerUpData.numberOfPeople,
+          budgetRange: {
+            min: partnerUpData.budgetMin,
+            max: partnerUpData.budgetMax,
+          },
+          numberOfDays: partnerUpData.numberOfDays,
+          startDate: partnerUpData.startDate,
+          endDate: partnerUpData.endDate,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (data.success) {
+        setMyPartnerUp(data.data);
+        setShowPartnerUpForm(false);
+        alert("PartnerUp created successfully!");
+        // Search for matching partners
+        searchPartners();
+      }
+    } catch (error) {
+      console.error("Error creating PartnerUp:", error);
+      alert(error.response?.data?.message || "Failed to create PartnerUp");
+    }
+  };
+
+  // Search for matching partners
+  const searchPartners = async () => {
+    if (!selectedLocation) return;
+
+    setLoadingPartners(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Use same placeId format as when creating
+      const placeId = `${selectedLocation.lat}_${selectedLocation.lng}`;
+      
+      const payload = {
+        placeId: placeId,
+        location: {
+          lat: selectedLocation.lat,
+          lon: selectedLocation.lng,
+        },
+      };
+
+      // Add dates if available
+      if (formData.travelDate) {
+        payload.startDate = formData.travelDate;
+        payload.endDate = formData.travelDate;
+      }
+
+      console.log("Searching for partners with:", payload);
+
+      const { data } = await API.post(
+        "/partnerup/search",
+        payload,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (data.success) {
+        console.log("Found matching partners:", data.data);
+        setMatchingPartners(data.data);
+      }
+    } catch (error) {
+      console.error("Error searching partners:", error);
+      // Don't show error to user, just log it
+    } finally {
+      setLoadingPartners(false);
+    }
+  };
+
+  // Send partner request
+  const handleSendPartnerRequest = async (partnerUpId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const { data } = await API.post(
+        `/partnerup/request/${partnerUpId}`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (data.success) {
+        alert("Partner request sent successfully!");
+      }
+    } catch (error) {
+      console.error("Error sending partner request:", error);
+      alert(error.response?.data?.message || "Failed to send request");
+    }
+  };
+
+  // Search for partners when location changes - remove date dependency for better matching
+  useEffect(() => {
+    if (selectedLocation) {
+      searchPartners();
+    }
+  }, [selectedLocation]);
+
+  // Also search when travel date changes
+  useEffect(() => {
+    if (selectedLocation && formData.travelDate) {
+      searchPartners();
+    }
+  }, [formData.travelDate]);
+
   return (
     <div className="min-h-screen bg-white py-23 px-4">
       <div className="max-w-7xl mx-auto">
@@ -351,6 +511,130 @@ export default function BookingPage() {
                 </div>
               </motion.div>
             )}
+
+            {/* PartnerUp Section */}
+            {selectedLocation && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8 border-t pt-6"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-bold flex items-center gap-2">
+                    <Users className="w-5 h-5 text-teal-500" />
+                    Partner Up
+                  </h3>
+                  {!myPartnerUp && (
+                    <button
+                      onClick={() => setShowPartnerUpForm(true)}
+                      className="flex items-center gap-2 bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Create
+                    </button>
+                  )}
+                </div>
+
+                {/* My PartnerUp */}
+                {myPartnerUp && (
+                  <div className="bg-gradient-to-br from-teal-50 to-teal-100 p-4 rounded-xl mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-semibold text-teal-700">
+                        Your Trip Plan
+                      </span>
+                      <span className="text-xs bg-teal-500 text-white px-2 py-1 rounded-full">
+                        {myPartnerUp.status}
+                      </span>
+                    </div>
+                    <div className="space-y-1 text-sm text-teal-800">
+                      <p>👥 {myPartnerUp.numberOfPeople} people</p>
+                      <p>💰 ${myPartnerUp.budgetRange.min} - ${myPartnerUp.budgetRange.max}</p>
+                      <p>📅 {myPartnerUp.numberOfDays} days</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Matching Partners */}
+                <div className="space-y-3">
+                  {loadingPartners ? (
+                    <div className="text-center py-4">
+                      <div className="inline-block animate-spin rounded-full h-6 w-6 border-2 border-teal-500 border-t-transparent"></div>
+                    </div>
+                  ) : matchingPartners.length > 0 ? (
+                    <>
+                      <p className="text-sm text-gray-600 mb-2">
+                        Found {matchingPartners.length} potential travel partner(s)
+                      </p>
+                      {matchingPartners.map((partner) => (
+                        <div
+                          key={partner._id}
+                          className="bg-white border-2 border-gray-200 rounded-xl p-4 hover:border-teal-500 transition"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <img
+                                src={
+                                  partner.createdBy.profilePic ||
+                                  `https://ui-avatars.com/api/?name=${partner.createdBy.name}&background=0D8ABC&color=fff&size=48`
+                                }
+                                alt={partner.createdBy.name}
+                                className="w-12 h-12 rounded-full border-2 border-teal-500"
+                              />
+                              <div>
+                                <h4 className="font-semibold text-gray-800">
+                                  {partner.createdBy.name}
+                                </h4>
+                                <p className="text-xs text-gray-500">
+                                  {partner.placeName}
+                                </p>
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => handleSendPartnerRequest(partner._id)}
+                              className="w-8 h-8 flex items-center justify-center bg-teal-500 text-white rounded-full hover:bg-teal-600 transition"
+                            >
+                              <Plus className="w-5 h-5" />
+                            </button>
+                          </div>
+                          <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-gray-600">
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {partner.numberOfPeople} people
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3" />
+                              ${partner.budgetRange.min}-${partner.budgetRange.max}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              {partner.numberOfDays} days
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {new Date(partner.startDate).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      {selectedLocation
+                        ? "No matching partners yet. Be the first to create a trip plan!"
+                        : "Search for a location to find travel partners"}
+                    </div>
+                  )}
+                </div>
+
+                {/* Local Host Section - Placeholder */}
+                <div className="mt-6 pt-6 border-t">
+                  <h3 className="text-xl font-bold mb-4">Local Host</h3>
+                  <div className="text-center py-4 text-gray-500 text-sm">
+                    Local hosts coming soon...
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </motion.div>
 
           {/* Map */}
@@ -427,6 +711,139 @@ export default function BookingPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* PartnerUp Form Modal */}
+      {showPartnerUpForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6"
+          >
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold">Create Trip Plan</h2>
+              <button
+                onClick={() => setShowPartnerUpForm(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePartnerUp} className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Number of People
+                </label>
+                <input
+                  type="number"
+                  name="numberOfPeople"
+                  value={partnerUpData.numberOfPeople}
+                  onChange={handlePartnerUpChange}
+                  min="1"
+                  max="20"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Min Budget ($)
+                  </label>
+                  <input
+                    type="number"
+                    name="budgetMin"
+                    value={partnerUpData.budgetMin}
+                    onChange={handlePartnerUpChange}
+                    min="0"
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Max Budget ($)
+                  </label>
+                  <input
+                    type="number"
+                    name="budgetMax"
+                    value={partnerUpData.budgetMax}
+                    onChange={handlePartnerUpChange}
+                    min="0"
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2">
+                  Number of Days
+                </label>
+                <input
+                  type="number"
+                  name="numberOfDays"
+                  value={partnerUpData.numberOfDays}
+                  onChange={handlePartnerUpChange}
+                  min="1"
+                  max="365"
+                  required
+                  className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    Start Date
+                  </label>
+                  <input
+                    type="date"
+                    name="startDate"
+                    value={partnerUpData.startDate}
+                    onChange={handlePartnerUpChange}
+                    min={new Date().toISOString().split("T")[0]}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-2">
+                    End Date
+                  </label>
+                  <input
+                    type="date"
+                    name="endDate"
+                    value={partnerUpData.endDate}
+                    onChange={handlePartnerUpChange}
+                    min={partnerUpData.startDate || new Date().toISOString().split("T")[0]}
+                    required
+                    className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowPartnerUpForm(false)}
+                  className="flex-1 px-6 py-3 rounded-xl border-2 border-gray-200 hover:bg-gray-50 font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-teal-500 to-blue-500 text-white font-semibold hover:shadow-lg transition"
+                >
+                  Create Trip Plan
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
