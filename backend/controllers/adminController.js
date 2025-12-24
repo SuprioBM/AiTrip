@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import Trip from "../models/Trip.js";
 import Review from "../models/Review.js";
-import {PartnerUp} from "../models/Partner.js";
+import {PartnerUp, PartnerUpMember} from "../models/Partner.js";
 import Location from "../models/Location.js";
 import Host from "../models/Host.js";
 import Booking from "../models/Booking.js";
@@ -17,19 +17,35 @@ export const getAllDashboardData = async (req, res, next) => {
     const [users, trips, reviews, partners, locations, hosts, bookings] =
       await Promise.all([
         User.find({ role: { $ne: "admin" } }),
-        Trip.find(),
+        Trip.find().populate('user', 'name email phone age'),
         Review.find(),
-        Partner.find(),
+        PartnerUp.find().populate('createdBy', 'name email phone age'),
         Location.find(),
         Host.find(),
         Booking.find(),
       ]);
 
+    // Get members for each partner-up
+    const partnersWithMembers = await Promise.all(
+      partners.map(async (partner) => {
+        const members = await PartnerUpMember.find({ 
+          partnerUp: partner._id,
+          status: 'accepted'
+        }).populate('user', 'name email phone age');
+        
+        return {
+          ...partner.toObject(),
+          members: members.map(m => m.user),
+          acceptedMembers: members
+        };
+      })
+    );
+
     res.json({
       users,
       trips,
       reviews,
-      partners,
+      partners: partnersWithMembers,
       locations,
       hosts,
       bookings,

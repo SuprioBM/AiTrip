@@ -12,7 +12,7 @@ export const createNotification = async ({ recipient, actor, type, data }) => {
 
 export const getUserNotifications = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     
     const notifs = await Notification.find({ recipient: userId })
       .sort({ createdAt: -1 })

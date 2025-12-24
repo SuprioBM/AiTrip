@@ -7,35 +7,62 @@ import Localhost from "../models/Host.js";
 ========================= */
 export const saveTrip = async (req, res) => {
   try {
-    const { user,locationName, placeId, selectedPins } = req.body;
+    const { 
+      locationName, 
+      placeId, 
+      selectedPins,
+      destination,
+      startDate,
+      endDate,
+      numberOfDays,
+      budget,
+      localhost,
+      localhostName 
+    } = req.body;
     
+    // Get user ID from authenticated request
+    const userId = req.user._id;
 
-    if (!locationName || !placeId || !selectedPins || !selectedPins.length) {
+    if (!locationName || !placeId) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
     // Check if trip already exists for this user + placeId
-    let trip = await Trip.findOne({ user: user.id, placeId });
+    let trip = await Trip.findOne({ user: userId, placeId });
 
     if (trip) {
       // Update existing trip
-      trip.selectedPins = selectedPins;
+      trip.selectedPins = selectedPins || trip.selectedPins;
       trip.locationName = locationName;
+      trip.destination = destination || trip.destination;
+      trip.startDate = startDate || trip.startDate;
+      trip.endDate = endDate || trip.endDate;
+      trip.numberOfDays = numberOfDays || trip.numberOfDays;
+      trip.budget = budget || trip.budget;
+      trip.localhost = localhost || trip.localhost;
+      trip.localhostName = localhostName || trip.localhostName;
       await trip.save();
     } else {
       // Create new trip
       trip = await Trip.create({
-        user: user.id,
+        user: userId,
         locationName,
         placeId,
-        selectedPins,
+        selectedPins: selectedPins || [],
+        destination,
+        startDate,
+        endDate,
+        numberOfDays,
+        budget,
+        localhost,
+        localhostName,
       });
     }
 
     return res.status(200).json({ message: "Trip saved successfully", trip });
   } catch (error) {
     console.error("Save Trip Error:", error);
-    return res.status(500).json({ message: "Failed to save trip" });
+    return res.status(500).json({ message: "Failed to save trip", error: error.message });
   }
 };
 
@@ -44,7 +71,7 @@ export const saveTrip = async (req, res) => {
 ========================= */
 export const getUserTrips = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     const trips = await Trip.find({ user: userId }).sort({ createdAt: -1 });
 
@@ -60,7 +87,7 @@ export const getUserTrips = async (req, res) => {
 ========================= */
 export const getTripByPlace = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { placeId } = req.params;
 
     const trip = await Trip.findOne({ user: userId, placeId });
@@ -91,7 +118,7 @@ export const getTripByPlace = async (req, res) => {
 ========================= */
 export const deleteTrip = async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { placeId } = req.params;
 
     const deleted = await Trip.findOneAndDelete({ user: userId, placeId });
@@ -101,5 +128,39 @@ export const deleteTrip = async (req, res) => {
   } catch (error) {
     console.error("Delete Trip Error:", error);
     return res.status(500).json({ message: "Failed to delete trip" });
+  }
+};
+
+/* =========================
+   Update Trip Localhost
+========================= */
+export const updateTripLocalhost = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { tripId } = req.params;
+    const { localhostId, localhostName } = req.body;
+
+    // Find trip by ID and verify it belongs to the user
+    const trip = await Trip.findOne({ _id: tripId, user: userId });
+    if (!trip) return res.status(404).json({ message: "Trip not found" });
+
+    // Verify localhost exists
+    if (localhostId) {
+      const localhost = await Localhost.findById(localhostId);
+      if (!localhost) return res.status(404).json({ message: "Localhost not found" });
+    }
+
+    // Update trip with localhost info
+    trip.localhost = localhostId || null;
+    trip.localhostName = localhostName || null;
+    await trip.save();
+
+    return res.status(200).json({ 
+      message: "Localhost assigned successfully", 
+      trip 
+    });
+  } catch (error) {
+    console.error("Update Trip Localhost Error:", error);
+    return res.status(500).json({ message: "Failed to update localhost" });
   }
 };
