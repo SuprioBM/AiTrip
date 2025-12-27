@@ -1,29 +1,28 @@
 import express from "express";
-import Review from "../models/Review.js";
 import { protect } from "../middleware/auth.js";
+import {
+  createReview,
+  getLocationReviews,
+  updateReview,
+  deleteReview,
+  markHelpful,
+} from "../controllers/reviewController.js";
 
 const router = express.Router();
 
-router.post("/", protect, async (req, res, next) => {
-  try {
-    const review = await Review.create({ ...req.body, author: req.user._id });
-    res.status(201).json(review);
-  } catch (err) {
-    next(err);
-  }
-});
+// Create a new review (requires authentication)
+router.post("/", protect, createReview);
 
-router.get("/target/:type/:id", async (req, res, next) => {
-  try {
-    const { type, id } = req.params;
-    const reviews = await Review.find({
-      targetType: type,
-      targetId: id,
-    }).populate("author", "name");
-    res.json(reviews);
-  } catch (err) {
-    next(err);
-  }
-});
+// Get reviews with pagination for a location
+router.get("/location/:locationId", getLocationReviews);
+
+// Update a review (requires authentication)
+router.put("/:reviewId", protect, updateReview);
+
+// Delete a review (requires authentication)
+router.delete("/:reviewId", protect, deleteReview);
+
+// Mark review as helpful (public)
+router.post("/:reviewId/helpful", markHelpful);
 
 export default router;

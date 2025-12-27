@@ -1,11 +1,13 @@
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import API from "../api";
-import { Bell, X, Check } from "lucide-react";
+import { Bell, X, Check, Shield } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Navigation() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -108,7 +110,7 @@ export default function Navigation() {
       <div className="max-w-7xl mx-auto px-6 py-3 flex items-center">
         {/* LEFT — NAVIGATION */}
         <nav className="flex gap-4 sm:gap-6 md:gap-8 lg:gap-12 text-black font-medium text-sm sm:text-base">
-          {["News", "Destinations", "Blog", "Contact"].map((item, idx) => (
+          {["Destinations", "Blog", "Contact"].map((item, idx) => (
             <a
               key={item}
               href={`#${item.toLowerCase()}`}
@@ -126,6 +128,29 @@ export default function Navigation() {
 
         {/* RIGHT — Notifications + Profile + Logout */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0 justify-end ml-140">
+          {/* Admin Button (only for admins) */}
+          {user?.role === "admin" && (
+            <button
+              onClick={() => navigate("/admin")}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:opacity-90 transition shadow-md"
+              style={{ animation: "iconPopScale 0.6s ease-out 0.15s both" }}
+            >
+              <Shield size={18} />
+              <span className="font-medium hidden sm:inline">Admin</span>
+            </button>
+          )}
+
+          {/* Dashboard Button (for all logged-in users) */}
+          {user && (
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-full hover:opacity-90 transition shadow-md"
+              style={{ animation: "iconPopScale 0.6s ease-out 0.2s both" }}
+            >
+              <span className="font-medium">Dashboard</span>
+            </button>
+          )}
+
           {/* Notifications Modal */}
           {showNotifications && (
             <div className="fixed inset-0 flex items-center justify-center z-60 p-4 pt-30">

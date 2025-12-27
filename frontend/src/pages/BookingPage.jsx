@@ -105,6 +105,18 @@ export default function BookingPage() {
   const [matchingPartners, setMatchingPartners] = useState([]);
   const [loadingPartners, setLoadingPartners] = useState(false);
   const [myPartnerUp, setMyPartnerUp] = useState(null);
+  const [localhosts, setLocalhosts] = useState([]);
+  const [selectedLocalhost, setSelectedLocalhost] = useState(null);
+  const [loadingLocalhosts, setLoadingLocalhosts] = useState(false);
+
+  // Additional trip details
+  const [tripDetails, setTripDetails] = useState({
+    startDate: '',
+    endDate: '',
+    numberOfDays: 0,
+    budget: 0,
+  });
+  const [savingTrip, setSavingTrip] = useState(false);
   
 
   const searchPartners = async (lat, lon) => {
@@ -156,6 +168,98 @@ export default function BookingPage() {
       setMatchingPartners([]);
     } finally {
       setLoadingPartners(false);
+    }
+  };
+
+  // Update number of days when dates change
+  useEffect(() => {
+    if (tripDetails.startDate && tripDetails.endDate) {
+      const days = calculateDays(tripDetails.startDate, tripDetails.endDate);
+      setTripDetails(prev => ({ ...prev, numberOfDays: days }));
+    }
+  }, [tripDetails.startDate, tripDetails.endDate]);
+
+  // Calculate days between dates
+  const calculateDays = (start, end) => {
+    if (!start || !end) return 0;
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Assign localhost to trip
+  const handleAssignLocalhost = async (host) => {
+    if (!user) {
+      alert('Please login to assign localhost');
+      return;
+    }
+
+    if (!selectedLocation) {
+      alert('Please select a location first');
+      return;
+    }
+
+    setSavingTrip(true);
+    try {
+      // Create unique placeId combining location and localhost
+      const locationCode = selectedLocation.name.substring(0, 4).toLowerCase().replace(/\s/g, '');
+      const uniquePlaceId = `${locationCode}_${host._id}_${Date.now()}`;
+      
+      const tripData = {
+        locationName: selectedLocation.name,
+        placeId: uniquePlaceId,
+        selectedPins: mapMarkers,
+        destination: selectedLocation.name,
+        localhost: host._id,
+        localhostName: host.name,
+      };
+
+      console.log('Assigning localhost to trip:', tripData);
+      const { data } = await API.post('/trips', tripData);
+      console.log('Response:', data);
+      
+      if (data.trip) {
+        alert(`Localhost "${host.name}" assigned to your trip successfully! View it in your dashboard.`);
+      }
+    } catch (error) {
+      console.error('Error assigning localhost:', error);
+      console.error('Error response:', error.response?.data);
+      const errorMsg = error.response?.data?.message || error.message;
+      
+      if (errorMsg.includes('duplicate') || errorMsg.includes('unique')) {
+        alert('You have already created a trip for this location with this localhost. Check your dashboard.');
+      } else {
+        alert(`Failed to assign localhost: ${errorMsg}`);
+      }
+    } finally {
+      setSavingTrip(false);
+    }
+  };
+
+  // Fetch localhosts by location
+  const fetchLocalhosts = async () => {
+    if (!selectedLocation) return;
+
+    setLoadingLocalhosts(true);
+    try {
+      // Extract first 3 letters of location name
+      const locationCode = selectedLocation.name
+        ? selectedLocation.name.toLowerCase().substring(0, 3)
+        : 'unk';
+
+      console.log('🔍 Fetching localhosts for location code:', locationCode);
+
+      const { data } = await API.get(`/hosts/${locationCode}`);
+      
+      console.log('✅ Localhosts fetched:', data);
+      setLocalhosts(data.data || []);
+    } catch (error) {
+      console.error('Error fetching localhosts:', error);
+      setLocalhosts([]);
+    } finally {
+      setLoadingLocalhosts(false);
     }
   };
 
@@ -414,6 +518,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (selectedLocation) {
       searchPartners();
+      fetchLocalhosts(); // Fetch localhosts when location changes
     }
   }, [selectedLocation]);
 
@@ -668,12 +773,51 @@ export default function BookingPage() {
                   )}
                 </div>
 
-                {/* Local Host Section - Placeholder */}
+                {/* Local Host Section */}
                 <div className="mt-6 pt-6 border-t">
                   <h3 className="text-xl font-bold mb-4">Local Host</h3>
-                  <div className="text-center py-4 text-gray-500 text-sm">
-                    Local hosts coming soon...
-                  </div>
+                  {loadingLocalhosts ? (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      Loading localhosts...
+                    </div>
+                  ) : localhosts.length > 0 ? (
+                    <div className="space-y-3">
+                      {localhosts.map((host) => (
+                        <div
+                          key={host._id}
+                          className="p-4 rounded-xl transition-all border-2 border-gray-200 hover:border-teal-300 bg-white"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-900">{host.name}</h4>
+                              <p className="text-sm text-gray-600">{host.locationName}</p>
+                              <p className="text-xs text-gray-500 mt-1">ID: {host._id}</p>
+                              {host.email && (
+                                <p className="text-xs text-gray-500 mt-2">📧 {host.email}</p>
+                              )}
+                              {host.phone && (
+                                <p className="text-xs text-gray-500">📱 {host.phone}</p>
+                              )}
+                            </div>
+                            <button
+                              onClick={() => handleAssignLocalhost(host)}
+                              disabled={savingTrip}
+                              className="ml-4 p-3 bg-gradient-to-r from-teal-500 to-blue-500 hover:opacity-90 disabled:opacity-50 text-white rounded-lg transition-all"
+                              title="Assign this localhost to trip"
+                            >
+                              <Plus size={20} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500 text-sm">
+                      {selectedLocation
+                        ? 'No local hosts available for this location yet'
+                        : 'Search for a location to find local hosts'}
+                    </div>
+                  )}
                 </div>
               </motion.div>
             )}

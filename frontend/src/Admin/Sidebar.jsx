@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -10,7 +11,8 @@ import {
   Settings,
   LogOut,
   Menu,
-  X
+  X,
+  ArrowLeft
 } from "lucide-react";
 
 const menuItems = [
@@ -25,6 +27,8 @@ const menuItems = [
 ];
 
 export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle }) {
+  const navigate = useNavigate();
+  
   return (
     <>
       {/* Mobile Toggle */}
@@ -60,6 +64,17 @@ export default function Sidebar({ currentPage, onPageChange, isOpen, onToggle })
               <p className="text-xs text-muted-foreground">Admin Panel</p>
             </div>
           </div>
+        </div>
+
+        {/* Back to Home Button */}
+        <div className="p-4 border-b border-border">
+          <button
+            onClick={() => navigate("/HomePage")}
+            className="w-full flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors duration-200"
+          >
+            <ArrowLeft size={20} />
+            <span className="font-medium text-sm">Back to Home</span>
+          </button>
         </div>
 
         {/* Navigation Menu */}

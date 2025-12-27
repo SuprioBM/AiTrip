@@ -11,6 +11,7 @@ import BookingPage from "./pages/BookingPage.jsx";
 import AdminRoute from "./Admin/Adminroute.jsx";
 import DetailsPage from "./pages/detailsPage.jsx";
 import ReviewPage from "./pages/ReviewPage.jsx";
+import UserDashboard from "./pages/Dashboard/UserDashboard.jsx";
 
 import MainLayout from "./layouts/layout_1.jsx";
 import EmptyLayout from "./layouts/layout_0.jsx";
@@ -29,6 +30,10 @@ const App = () => {
         <Route element={<EmptyLayout />}>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/oauth" element={<OAuthCallback />} />
+          <Route
+            path="/dashboard"
+            element={user ? <UserDashboard /> : <Navigate to="/login" replace />}
+          />
           <Route
             path="/admin"
             element={

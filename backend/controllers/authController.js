@@ -108,7 +108,14 @@ export const login = async (req, res, next) => {
       return res.status(403).json({ message: 'Email not verified' })
     res.json({
       token: generateToken(user._id),
-      user: { id: user._id, email: user.email, role: user.role },
+      user: { 
+        id: user._id, 
+        name: user.name,
+        email: user.email, 
+        role: user.role,
+        phone: user.phone,
+        age: user.age
+      },
     })
   } catch (err) {
     next(err)

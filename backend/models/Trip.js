@@ -18,8 +18,38 @@ const tripSchema = new mongoose.Schema({
     index: true,
   },
 
+  destination: {
+    type: String, // Trip destination name
+  },
+
+  startDate: {
+    type: Date, // Trip start date
+  },
+
+  endDate: {
+    type: Date, // Trip end date
+  },
+
+  numberOfDays: {
+    type: Number, // Duration of trip
+  },
+
+  budget: {
+    type: Number, // Trip budget
+  },
+
+  localhost: {
+    type: String, // Localhost ID reference (e.g., "lon101", "dha101")
+    ref: "Localhost",
+  },
+
+  localhostName: {
+    type: String, // Localhost name for quick access
+  },
+
   selectedPins: [
     {
+      _id: false, // Disable auto-generated _id for subdocuments
       category: String, // place_of_worship, museum, etc
       name: String, // name of the place
       location: {

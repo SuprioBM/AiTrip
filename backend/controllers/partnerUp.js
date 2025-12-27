@@ -18,7 +18,7 @@ export const createPartnerUp = async (req, res) => {
       location,
     } = req.body;
 
-    const userId = req.user.id;
+    const userId = req.user._id;
 
     if (!placeId || !placeName || !(maxMembers || numberOfPeople)) {
       return res.status(400).json({
@@ -75,7 +75,7 @@ export const createPartnerUp = async (req, res) => {
 export const requestToJoinPartnerUp = async (req, res) => {
   try {
     const { partnerUpId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user._id;
     const { placeName, location } = req.body || {};
 
     const partnerUp = await PartnerUp.findById(partnerUpId);

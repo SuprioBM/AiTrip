@@ -22,7 +22,7 @@ export default function TourPartnersPage() {
 
   const filteredPartners = partnersData.filter(
     (partner) =>
-      partner.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+      (partner.placeName || partner.name || "").toLowerCase().includes(searchTerm.toLowerCase()) &&
       (filterStatus === "all" || partner.status === filterStatus)
   );
 
@@ -32,29 +32,48 @@ export default function TourPartnersPage() {
   };
 
   const columns = [
-    { key: "name", label: "Partner Name" },
-    { key: "rating", label: "Rating" },
+    { 
+      key: "placeName", 
+      label: "Destination",
+      render: (value, partner) => value || partner.name || "N/A"
+    },
+    { 
+      key: "createdBy", 
+      label: "Created By",
+      render: (value) => value?.name || value?.email || "N/A"
+    },
+    { 
+      key: "members", 
+      label: "Accepted Partners",
+      render: (members) => {
+        if (!members || members.length === 0) return "No partners yet";
+        return members.map(m => m.name || m.email).join(", ");
+      }
+    },
     {
       key: "status",
-      label: "Verification",
+      label: "Status",
       render: (status) => (
         <div className="flex items-center gap-2">
           <CheckCircle
             size={16}
-            className={status === "Verified" ? "text-green-600" : "text-gray-400"}
+            className={status === "open" ? "text-green-600" : status === "full" ? "text-blue-600" : "text-gray-400"}
           />
           <span
             className={`text-xs font-medium ${
-              status === "Verified" ? "text-green-700" : "text-gray-600"
+              status === "open" ? "text-green-700" : status === "full" ? "text-blue-700" : "text-gray-600"
             }`}
           >
-            {status}
+            {status || "open"}
           </span>
         </div>
       ),
     },
-    { key: "tours", label: "Tours" },
-    { key: "joinDate", label: "Join Date" },
+    { 
+      key: "createdAt", 
+      label: "Created Date",
+      render: (value) => value ? new Date(value).toLocaleDateString() : "N/A"
+    },
   ];
 
   const actions = [
@@ -114,50 +133,120 @@ export default function TourPartnersPage() {
       <DataTable columns={columns} data={filteredPartners} actions={actions} />
 
       {/* Modal */}
-      <Modal isOpen={modalOpen} title="Partner Details" onClose={() => setModalOpen(false)}>
+      <Modal isOpen={modalOpen} title="Partner-Up Details" onClose={() => setModalOpen(false)}>
         {selectedPartner && (
           <div className="space-y-4">
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase">
-                Company Name
+                Destination
               </label>
-              <p className="text-foreground font-medium mt-1">{selectedPartner.name}</p>
+              <p className="text-foreground font-medium mt-1">{selectedPartner.placeName || "N/A"}</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase">
+                Created By
+              </label>
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mt-2">
+                <p className="text-foreground font-medium">
+                  {selectedPartner.createdBy?.name || "N/A"}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {selectedPartner.createdBy?.email || ""}
+                </p>
+                {selectedPartner.createdBy?.phone && (
+                  <p className="text-sm text-muted-foreground">
+                    Phone: {selectedPartner.createdBy.phone}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground uppercase">
+                Accepted Partners ({selectedPartner.members?.length || 0} / {selectedPartner.maxMembers || 0})
+              </label>
+              {selectedPartner.members && selectedPartner.members.length > 0 ? (
+                <div className="space-y-2 mt-2">
+                  {selectedPartner.members.map((member, idx) => (
+                    <div key={idx} className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+                      <p className="text-foreground font-medium">
+                        {member.name || "N/A"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {member.email || ""}
+                      </p>
+                      {member.phone && (
+                        <p className="text-sm text-muted-foreground">
+                          Phone: {member.phone}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted-foreground mt-2 text-sm">No partners have accepted yet</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
-                  Rating
+                  Status
                 </label>
-                <p className="text-foreground font-medium mt-1">
-                  {selectedPartner.rating} / 5.0
-                </p>
+                <p className="text-foreground font-medium mt-1 capitalize">{selectedPartner.status || "open"}</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
-                  Tours
+                  Created Date
                 </label>
                 <p className="text-foreground font-medium mt-1">
-                  {selectedPartner.tours}
+                  {selectedPartner.createdAt ? new Date(selectedPartner.createdAt).toLocaleDateString() : "N/A"}
                 </p>
               </div>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase">
-                Verification
-              </label>
-              <p className="text-foreground font-medium mt-1">{selectedPartner.status}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  Number of Days
+                </label>
+                <p className="text-foreground font-medium mt-1">{selectedPartner.numberOfDays || "N/A"}</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">
+                  Budget Range
+                </label>
+                <p className="text-foreground font-medium mt-1">
+                  {selectedPartner.budgetRange ? `$${selectedPartner.budgetRange.min} - $${selectedPartner.budgetRange.max}` : "N/A"}
+                </p>
+              </div>
             </div>
 
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase">
-                Member Since
-              </label>
-              <p className="text-foreground font-medium mt-1">
-                {selectedPartner.joinDate}
-              </p>
-            </div>
+            {(selectedPartner.startDate || selectedPartner.endDate) && (
+              <div className="grid grid-cols-2 gap-4">
+                {selectedPartner.startDate && (
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">
+                      Start Date
+                    </label>
+                    <p className="text-foreground font-medium mt-1">
+                      {new Date(selectedPartner.startDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+                {selectedPartner.endDate && (
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground uppercase">
+                      End Date
+                    </label>
+                    <p className="text-foreground font-medium mt-1">
+                      {new Date(selectedPartner.endDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 pt-4 border-t border-border">
               <button className="flex-1 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-200">

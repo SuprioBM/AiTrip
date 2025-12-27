@@ -4,20 +4,25 @@ import {
   getUserTrips,
   getTripByPlace,
   deleteTrip,
+  updateTripLocalhost,
 } from "../controllers/tripController.js";
+import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // Save or update trip
-router.post("/", saveTrip);
+router.post("/", protect, saveTrip);
 
 // Get all trips of user
-router.get("/", getUserTrips);
+router.get("/", protect, getUserTrips);
 
 // Get a trip for specific location (with localhost & partner-up)
-router.get("/:placeId", getTripByPlace);
+router.get("/:placeId", protect, getTripByPlace);
+
+// Update trip localhost
+router.put("/:tripId/localhost", protect, updateTripLocalhost);
 
 // Delete a trip
-router.delete("/:placeId", deleteTrip);
+router.delete("/:placeId", protect, deleteTrip);
 
 export default router;

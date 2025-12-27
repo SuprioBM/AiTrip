@@ -21,9 +21,12 @@ export default function TripPlansPage() {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredTrips = tripsData.filter(
-    (trip) =>
-      trip.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      trip.destination.toLowerCase().includes(searchTerm.toLowerCase())
+    (trip) => {
+      const userName = trip.user?.name || trip.user?.email || '';
+      const destination = trip.destination || trip.locationName || '';
+      return userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             destination.toLowerCase().includes(searchTerm.toLowerCase());
+    }
   );
 
   const handleViewItinerary = (trip) => {
@@ -32,12 +35,41 @@ export default function TripPlansPage() {
   };
 
   const columns = [
-    { key: "id", label: "Trip ID" },
-    { key: "user", label: "User" },
-    { key: "destination", label: "Destination" },
-    { key: "budget", label: "Budget" },
-    { key: "duration", label: "Duration" },
-    { key: "generated", label: "Generated" },
+    { 
+      key: "_id", 
+      label: "Trip ID",
+      render: (value) => value?.substring(0, 8) || "N/A"
+    },
+    { 
+      key: "user", 
+      label: "User",
+      render: (value) => value?.name || value?.email || "N/A"
+    },
+    { 
+      key: "destination", 
+      label: "Destination",
+      render: (value, trip) => value || trip.locationName || "N/A"
+    },
+    { 
+      key: "localhostName", 
+      label: "Local Host",
+      render: (value, trip) => value || trip.localhost || "Not assigned"
+    },
+    { 
+      key: "budget", 
+      label: "Budget",
+      render: (value) => value ? `$${value}` : "N/A"
+    },
+    { 
+      key: "numberOfDays", 
+      label: "Duration",
+      render: (value) => value ? `${value} days` : "N/A"
+    },
+    { 
+      key: "createdAt", 
+      label: "Created",
+      render: (value) => value ? new Date(value).toLocaleDateString() : "N/A"
+    },
   ];
 
   const actions = [
@@ -82,21 +114,66 @@ export default function TripPlansPage() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Trip ID</label>
-                <p className="text-foreground font-medium">{selectedTrip.id}</p>
+                <p className="text-foreground font-medium">{selectedTrip._id?.substring(0, 8) || "N/A"}</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">User</label>
-                <p className="text-foreground font-medium">{selectedTrip.user}</p>
+                <p className="text-foreground font-medium">{selectedTrip.user?.name || selectedTrip.user?.email || "N/A"}</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Destination</label>
-                <p className="text-foreground font-medium">{selectedTrip.destination}</p>
+                <p className="text-foreground font-medium">{selectedTrip.destination || selectedTrip.locationName || "N/A"}</p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">Budget</label>
-                <p className="text-foreground font-medium">{selectedTrip.budget}</p>
+                <p className="text-foreground font-medium">{selectedTrip.budget ? `$${selectedTrip.budget}` : "N/A"}</p>
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Start Date</label>
+                <p className="text-foreground font-medium">
+                  {selectedTrip.startDate ? new Date(selectedTrip.startDate).toLocaleDateString() : "N/A"}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">End Date</label>
+                <p className="text-foreground font-medium">
+                  {selectedTrip.endDate ? new Date(selectedTrip.endDate).toLocaleDateString() : "N/A"}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Duration</label>
+                <p className="text-foreground font-medium">{selectedTrip.numberOfDays || 0} days</p>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground uppercase">Created Date</label>
+                <p className="text-foreground font-medium">
+                  {selectedTrip.createdAt ? new Date(selectedTrip.createdAt).toLocaleDateString() : "N/A"}
+                </p>
+              </div>
+            </div>
+
+            {selectedTrip.localhostName && (
+              <div className="bg-teal-50 dark:bg-teal-900/20 p-4 rounded-lg">
+                <label className="text-xs font-semibold text-muted-foreground uppercase block mb-2">
+                  Assigned Local Host
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-400 to-blue-400 flex items-center justify-center text-white font-bold">
+                    {selectedTrip.localhostName.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-foreground font-semibold">{selectedTrip.localhostName}</p>
+                    <p className="text-xs text-muted-foreground">ID: {selectedTrip.localhost}</p>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="text-xs font-semibold text-muted-foreground uppercase">Sample Itinerary</label>
