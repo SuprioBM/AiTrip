@@ -1,10 +1,7 @@
 import Review from "../models/Review.js";
 import User from "../models/User.js";
 
-/**
- * Create a new review for a location
- * Allows multiple reviews per user
- */
+// Creates new review with location data and authenticated user ID, validates required fields
 export const createReview = async (req, res, next) => {
   try {
     const { locationId, locationName, rating, comment } = req.body;
@@ -38,10 +35,7 @@ export const createReview = async (req, res, next) => {
   }
 };
 
-/**
- * Get paginated reviews for a specific location
- * Includes average rating calculation and pagination metadata
- */
+// Fetches paginated reviews for a location with average rating using MongoDB aggregation
 export const getLocationReviews = async (req, res, next) => {
   try {
     const { locationId } = req.params;
@@ -92,15 +86,10 @@ export const getLocationReviews = async (req, res, next) => {
   }
 };
 
-
-
-/**
- * Get a single review by ID
- */
+// Fetches all reviews created by a specific user using userId query parameter
 export const getReviewById = async (req, res, next) => {
   try {
-    const  reviewId  = req.query.userId;
-    
+    const reviewId = req.query.userId;
 
     const reviews = await Review.find({ userId: reviewId });
 
@@ -117,9 +106,7 @@ export const getReviewById = async (req, res, next) => {
   }
 };
 
-/**
- * Admin: Get all reviews without pagination or filters
- */
+// Retrieves all reviews from database without pagination for admin dashboard
 export const getAllReviewsAdmin = async (req, res, next) => {
   try {
     const reviews = await Review.find({})
@@ -136,10 +123,7 @@ export const getAllReviewsAdmin = async (req, res, next) => {
   }
 };
 
-/**
- * Update an existing review (rating and/or comment)
- * Only allows users to update their own reviews
- */
+// Updates review rating/comment after ownership verification (users edit own reviews only)
 export const updateReview = async (req, res, next) => {
   try {
     const { reviewId } = req.params;
@@ -173,10 +157,7 @@ export const updateReview = async (req, res, next) => {
   }
 };
 
-/**
- * Delete a review permanently
- * Only allows users to delete their own reviews
- */
+// Permanently removes a review after verifying user ownership (users delete own reviews only)
 export const deleteReview = async (req, res, next) => {
   try {
     const { reviewId } = req.params;
@@ -205,10 +186,7 @@ export const deleteReview = async (req, res, next) => {
   }
 };
 
-/**
- * Mark a review as helpful
- * Any user can mark a review as helpful (public endpoint)
- */
+// Increments helpful counter for a review (public endpoint accessible to all users)
 export const markHelpful = async (req, res, next) => {
   try {
     const { reviewId } = req.params;

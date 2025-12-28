@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, ThumbsUp } from "lucide-react";
 import axios from "axios";
 
+// Main component that displays all reviews for a specific location with pagination and average rating
 const ReviewPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const ReviewPage = () => {
   const [placeData, setPlaceData] = useState(null);
   const [averageRating, setAverageRating] = useState(0);
 
+  // Fetch reviews from backend when component mounts or search params change
   useEffect(() => {
     const fetchReviews = async () => {
       try {
@@ -47,7 +49,8 @@ const ReviewPage = () => {
 
     fetchReviews();
   }, [searchParams]);
-
+// Navigate back to details page while preserving location data in URL params
+  
   const handleGoBack = () => {
     if (placeData) {
       const encodedData = encodeURIComponent(JSON.stringify(placeData));
@@ -56,7 +59,8 @@ const ReviewPage = () => {
       navigate(-1);
     }
   };
-
+// Renders visual star rating display based on numeric rating value (1-5)
+  
   const renderStars = (rating) => {
     return (
       <div className="flex items-center gap-1">
@@ -72,6 +76,7 @@ const ReviewPage = () => {
         ))}
       </div>
     );
+  // Converts ISO date string to readable format (e.g., "December 29, 2025")
   };
 
   const formatDate = (dateString) => {

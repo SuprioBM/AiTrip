@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// Defines the structure of review documents including user, location, rating, and engagement metrics
 const reviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,7 +47,7 @@ const reviewSchema = new mongoose.Schema({
   },
 });
 
-// Index for efficient querying
+// Database index for fast queries by locationId and newest reviews first
 reviewSchema.index({ locationId: 1, createdAt: -1 });
 
 export default mongoose.model("Review", reviewSchema);
