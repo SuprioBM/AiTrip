@@ -19,14 +19,6 @@ export default function DestinationCard({ image, title, dots = 5, animationDelay
           style={{ animation: `imageFadeIn 0.6s ease-out ${animationDelay + 0.2}s both` }}
         />
         
-        <button 
-          className="absolute top-3 right-3 w-8 h-8 sm:w-10 sm:h-10 bg-white/90 rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center hover:scale-115 hover:-translate-y-0.5"
-          style={{ animation: `bookmarkPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) ${animationDelay + 0.3}s both` }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700">
-            <path d="M17 3H5c-1.11 0-2 .9-2 2v16l7-3 7 3V5c0-1.1.89-2 2-2z" />
-          </svg>
-        </button>
       </div>
     </div>
   )

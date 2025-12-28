@@ -19,7 +19,7 @@ export default function LandingPage() {
       >
         Your Next Adventure Awaits
       </motion.h1>
-      <section className="px-30 py-15 flex justify-evenly gap-6">
+      <section className="px-30 py-15 flex justify-evenly gap-6" id="destinations">
         {[
           { color: "#34D399", image: "/santorini-greece-sunset.jpg" },
           { color: "#60A5FA", image: "/broken-beach-bali.jpg" },
@@ -58,7 +58,7 @@ export default function LandingPage() {
       </section>
 
       {/* DEFINITION SECTION */}
-      <section className="px-8 py-12 max-w-7xl mx-auto">
+      <section className="px-8 py-12 max-w-7xl mx-auto" id="mission">
         <h2 className="text-3xl font-bold mb-12 text-center">Our Mission</h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">

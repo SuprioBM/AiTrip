@@ -53,6 +53,13 @@ const DetailsPage = () => {
     hasPrevPage: false,
   });
 
+
+    const images = [
+      "/1.jpg",
+      "/2.jpg",
+      "/3.jpg",
+      "/4.jpg",
+    ];  
   // ============================================================================
   // EFFECT: Load place data from URL on component mount
   // ============================================================================
@@ -384,32 +391,31 @@ const DetailsPage = () => {
   // MAIN RENDER
   // ============================================================================
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-30 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Back Button */}
-        <button
-          onClick={() => navigate("/booking")}
-          className="mb-6 flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors group"
-        >
-          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          <span className="font-semibold">Back to Booking</span>
-        </button>
-
         {/* Photo Gallery - Bento Grid */}
         <div className="mb-6">
           <div className="grid grid-cols-4 gap-2 h-[400px]">
             {/* Large photo on left */}
             <div className="col-span-2 row-span-2">
               <div className="w-full h-full bg-gradient-to-br from-teal-100 to-teal-50 flex items-center justify-center rounded-lg overflow-hidden border border-gray-200">
-                <span className="text-gray-400 text-sm">Photo Gallery</span>
+                <img
+                  src="/5.jpg"
+                  alt="Main Photo"
+                  className="w-full h-full object-cover"
+                />
               </div>
             </div>
 
             {/* Right side - 4 smaller photos in 2x2 grid */}
-            {[2, 3, 4, 5].map((num) => (
-              <div key={num} className="col-span-1">
+            {images.map((src, idx) => (
+              <div key={idx} className="col-span-1">
                 <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center rounded-lg overflow-hidden border border-gray-200">
-                  <span className="text-gray-400 text-xs">Photo {num}</span>
+                  <img
+                    src={src}
+                    alt={`Photo ${idx + 2}`}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               </div>
             ))}
@@ -417,7 +423,7 @@ const DetailsPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="space-y-6">
+        <div className="space-y-6 mt-50">
           {/* Title Section */}
           <div>
             <p className="text-sm text-gray-600 mb-2">
@@ -479,7 +485,9 @@ const DetailsPage = () => {
                   </li>
                   <li className="flex items-start">
                     <span className="mr-3 text-teal-500">•</span>
-                    <span>Perfect for families, couples, and solo travelers</span>
+                    <span>
+                      Perfect for families, couples, and solo travelers
+                    </span>
                   </li>
                 </ul>
               </div>
@@ -498,7 +506,10 @@ const DetailsPage = () => {
                     { icon: "🐾", text: "Pet Friendly" },
                     { icon: "🍽️", text: "Food Services" },
                   ].map((amenity, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200">
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200"
+                    >
                       <span className="text-2xl">{amenity.icon}</span>
                       <span className="text-gray-700">{amenity.text}</span>
                     </div>
@@ -524,7 +535,9 @@ const DetailsPage = () => {
                       </p>
                     </>
                   ) : (
-                    <p className="text-gray-500">Location details unavailable</p>
+                    <p className="text-gray-500">
+                      Location details unavailable
+                    </p>
                   )}
                 </div>
               </div>
@@ -637,8 +650,11 @@ const DetailsPage = () => {
                                 Rating
                               </label>
                               <div className="flex gap-2">
-                                {renderStars(editedReview.rating, true, (rating) =>
-                                  setEditedReview({ ...editedReview, rating })
+                                {renderStars(
+                                  editedReview.rating,
+                                  true,
+                                  (rating) =>
+                                    setEditedReview({ ...editedReview, rating })
                                 )}
                               </div>
                             </div>
@@ -742,23 +758,27 @@ const DetailsPage = () => {
                     ))}
 
                     {/* Load More Button */}
-                    {loadMoreCount < 2 && reviews.length < pagination.totalReviews && (
-                      <div className="flex justify-center mt-6">
-                        <button
-                          onClick={handleLoadMore}
-                          className="px-8 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium shadow-md hover:shadow-lg flex items-center gap-2"
-                        >
-                          <ChevronLeft className="w-5 h-5 rotate-[-90deg]" />
-                          {loadMoreCount === 0 ? 'See More (3 reviews)' : 'See All Reviews'}
-                        </button>
-                      </div>
-                    )}
-                    
+                    {loadMoreCount < 2 &&
+                      reviews.length < pagination.totalReviews && (
+                        <div className="flex justify-center mt-6">
+                          <button
+                            onClick={handleLoadMore}
+                            className="px-8 py-3 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition-colors font-medium shadow-md hover:shadow-lg flex items-center gap-2"
+                          >
+                            <ChevronLeft className="w-5 h-5 rotate-[-90deg]" />
+                            {loadMoreCount === 0
+                              ? "See More (3 reviews)"
+                              : "See All Reviews"}
+                          </button>
+                        </div>
+                      )}
+
                     {/* Showing count */}
                     {reviews.length > 0 && (
                       <div className="text-center mt-4">
                         <p className="text-sm text-gray-500">
-                          Showing {reviews.length} of {pagination.totalReviews} reviews
+                          Showing {reviews.length} of {pagination.totalReviews}{" "}
+                          reviews
                         </p>
                       </div>
                     )}

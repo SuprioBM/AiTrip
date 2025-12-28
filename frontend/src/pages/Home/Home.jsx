@@ -43,7 +43,7 @@ export default function HomePage() {
     {
       id: 6,
       title: "Machu Picchu, Peru",
-      image: "/machu-picchu-peru-mountains.jpg",
+      image: "/img.webp",
       description:
         "Explore the ancient Incan citadel nestled high in the Andes Mountains. Machu Picchu's mysterious ruins, breathtaking mountain vistas, and rich archaeological heritage make it one of the world's most awe-inspiring destinations.",
     },

@@ -6,6 +6,8 @@ import {
   updateReview,
   deleteReview,
   markHelpful,
+  getAllReviewsAdmin,
+  getReviewById,
 } from "../controllers/reviewController.js";
 
 const router = express.Router();
@@ -24,5 +26,11 @@ router.delete("/:reviewId", protect, deleteReview);
 
 // Mark review as helpful (public)
 router.post("/:reviewId/helpful", markHelpful);
+
+// Admin: Get all reviews with filters
+router.get("/getAllReviews", getAllReviewsAdmin);
+
+// Get review by ID
+router.get("/getreviewbyid", getReviewById);
 
 export default router;

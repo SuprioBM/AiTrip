@@ -2,13 +2,13 @@ import React from "react";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white mt-16">
+    <footer id="contact" className="w-full bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white mt-16">
       <div className="max-w-7xl mx-auto px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Brand Section */}
           <div className="md:col-span-1">
             <h3 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent mb-4">
-              TravelHub
+            AiVoyager
             </h3>
             <p className="text-gray-400 text-sm leading-relaxed mb-4">
               Discover the world's most amazing destinations with expertly

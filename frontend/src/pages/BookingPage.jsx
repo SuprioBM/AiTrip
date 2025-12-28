@@ -791,7 +791,6 @@ export default function BookingPage() {
                             <div className="flex-1">
                               <h4 className="font-semibold text-gray-900">{host.name}</h4>
                               <p className="text-sm text-gray-600">{host.locationName}</p>
-                              <p className="text-xs text-gray-500 mt-1">ID: {host._id}</p>
                               {host.email && (
                                 <p className="text-xs text-gray-500 mt-2">📧 {host.email}</p>
                               )}

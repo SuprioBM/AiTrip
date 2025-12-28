@@ -29,5 +29,7 @@ router.post("/request/:partnerUpId", protect, requestToJoinPartnerUp);
 router.patch("/:partnerUpId/member/:memberId", respondToJoinRequest);
 
 // Get partner-up members
-router.get("/:partnerUpId/members", getPartnerUpMembers);
+router.get("/partnerUpmembers", getPartnerUpMembers);
+
+
 export default router;

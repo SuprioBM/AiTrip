@@ -15,8 +15,89 @@ import {
   DollarSign,
   Plus,
   Calendar,
+  Search,
+  Star,
+  X,
 } from "lucide-react";
 import API from "../../api";
+
+// Modal Component
+const Modal = ({ isOpen, onClose, title, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-800 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+          <h3 className="text-2xl font-bold text-white">{title}</h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-slate-700 rounded-lg transition"
+          >
+            <X className="text-slate-400" size={20} />
+          </button>
+        </div>
+        <div className="p-6">{children}</div>
+      </div>
+    </div>
+  );
+};
+
+// DataTable Component
+const DataTable = ({ columns, data, actions }) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b border-slate-700">
+            {columns.map((col) => (
+              <th
+                key={col.key}
+                className="text-left py-3 px-4 text-slate-400 text-sm font-medium"
+              >
+                {col.label}
+              </th>
+            ))}
+            {actions && actions.length > 0 && (
+              <th className="text-left py-3 px-4 text-slate-400 text-sm font-medium">
+                Actions
+              </th>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((row, idx) => (
+            <tr
+              key={idx}
+              className="border-b border-slate-700/50 hover:bg-slate-700/30"
+            >
+              {columns.map((col) => (
+                <td key={col.key} className="py-3 px-4 text-white text-sm">
+                  {col.render ? col.render(row[col.key], row) : row[col.key]}
+                </td>
+              ))}
+              {actions && actions.length > 0 && (
+                <td className="py-3 px-4">
+                  <div className="flex gap-2">
+                    {actions.map((action, actionIdx) => (
+                      <button
+                        key={actionIdx}
+                        onClick={() => action.onClick(row)}
+                        className={`px-3 py-1 rounded text-xs font-medium transition ${action.className}`}
+                      >
+                        {action.label}
+                      </button>
+                    ))}
+                  </div>
+                </td>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 export default function UserDashboard() {
   // ===== AUTHENTICATION & NAVIGATION =====
@@ -26,18 +107,22 @@ export default function UserDashboard() {
   // ===== STATE MANAGEMENT =====
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+  const [userReviews, setUserReviews] = useState([]);
+  const [reviewSearchTerm, setReviewSearchTerm] = useState("");
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+
   const [stats, setStats] = useState({
     totalTrips: 0,
     upcomingTrips: 0,
     completedTrips: 0,
     totalSpent: 0,
   });
-  
+
   const [recentTrips, setRecentTrips] = useState([]);
   const [localhosts, setLocalhosts] = useState([]);
   const [partnerUps, setPartnerUps] = useState([]);
-  
+
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState({
     phone: user?.phone || "",
@@ -46,7 +131,8 @@ export default function UserDashboard() {
 
   // Localhost assignment modal states
   const [localhostModalOpen, setLocalhostModalOpen] = useState(false);
-  const [selectedTripForLocalhost, setSelectedTripForLocalhost] = useState(null);
+  const [selectedTripForLocalhost, setSelectedTripForLocalhost] =
+    useState(null);
   const [availableLocalhosts, setAvailableLocalhosts] = useState([]);
   const [loadingLocalhosts, setLoadingLocalhosts] = useState(false);
 
@@ -59,17 +145,21 @@ export default function UserDashboard() {
     try {
       const { data } = await API.get("/trips");
       const trips = data.trips || [];
-      
-      const upcoming = trips.filter(t => t.startDate && new Date(t.startDate) > new Date());
-      const completed = trips.filter(t => t.endDate && new Date(t.endDate) < new Date());
-      
+
+      const upcoming = trips.filter(
+        (t) => t.startDate && new Date(t.startDate) > new Date()
+      );
+      const completed = trips.filter(
+        (t) => t.endDate && new Date(t.endDate) < new Date()
+      );
+
       setStats({
         totalTrips: trips.length,
         upcomingTrips: upcoming.length,
         completedTrips: completed.length,
         totalSpent: trips.reduce((sum, t) => sum + (t.budget || 0), 0),
       });
-      
+
       setRecentTrips(trips.slice(0, 5));
     } catch (error) {
       console.error("Failed to fetch dashboard data:", error);
@@ -81,10 +171,10 @@ export default function UserDashboard() {
     try {
       const { data } = await API.get("/trips");
       const trips = data.trips || [];
-      
+
       const uniqueLocalhosts = [];
       const seenIds = new Set();
-      
+
       for (const trip of trips) {
         if (trip.localhost && !seenIds.has(trip.localhost)) {
           seenIds.add(trip.localhost);
@@ -96,7 +186,7 @@ export default function UserDashboard() {
           });
         }
       }
-      
+
       setLocalhosts(uniqueLocalhosts);
     } catch (error) {
       console.error("Failed to fetch localhosts:", error);
@@ -106,23 +196,25 @@ export default function UserDashboard() {
   // ===== FETCH PARTNER UPS =====
   const fetchPartnerUps = async () => {
     try {
-      const { data } = await API.get("/partnerup/my-partnerups");
+      const { data } = await API.get("/partner-ups/partnerUpmembers", {
+        params: { userId: user.id },
+      });
       setPartnerUps(data.data || []);
     } catch (error) {
       console.error("Failed to fetch partner ups:", error);
     }
   };
+
   // ===== FETCH AVAILABLE LOCALHOSTS FOR ASSIGNMENT =====
   const fetchAvailableLocalhosts = async (destination) => {
     setLoadingLocalhosts(true);
     try {
-      // Extract location code from destination (first 3 characters)
       const locationCode = destination?.substring(0, 3).toLowerCase() || "";
       if (!locationCode) {
         setAvailableLocalhosts([]);
         return;
       }
-      
+
       const { data } = await API.get(`/hosts/${locationCode}`);
       setAvailableLocalhosts(data.hosts || []);
     } catch (error) {
@@ -140,15 +232,11 @@ export default function UserDashboard() {
         localhostId,
         localhostName,
       });
-      
-      // Refresh trips data
+
       await fetchDashboardData();
-      
-      // Close modal
       setLocalhostModalOpen(false);
       setSelectedTripForLocalhost(null);
       setAvailableLocalhosts([]);
-      
       alert("Localhost assigned successfully!");
     } catch (error) {
       console.error("Failed to assign localhost:", error);
@@ -156,12 +244,196 @@ export default function UserDashboard() {
     }
   };
 
+  // ===== FETCH REVIEWS BY USER ID =====
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const fetchUserReviews = async () => {
+      try {
+        const { data } = await API.get("/reviews/getreviewbyid", {
+          params: { userId: user.id },
+        });
+
+        if (data.success && Array.isArray(data.reviews)) {
+          setUserReviews(data.reviews);
+        } else {
+          setUserReviews([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user reviews:", error);
+        setUserReviews([]);
+      }
+    };
+
+    fetchUserReviews();
+  }, [user?.id]);
+
+  // ===== FILTERED REVIEWS =====
+  const filteredUserReviews = (userReviews || []).filter(
+    (r) =>
+      r.comment?.toLowerCase().includes(reviewSearchTerm.toLowerCase()) ||
+      r.locationName?.toLowerCase().includes(reviewSearchTerm.toLowerCase())
+  );
+
+  // ===== REVIEWS COLUMNS =====
+  const reviewColumns = [
+    {
+      key: "location",
+      label: "Location",
+      render: (_, row) => row.locationName || "-",
+    },
+    {
+      key: "comment",
+      label: "Comment",
+      render: (_, row) => (
+        <span className="line-clamp-2">{row.comment || "-"}</span>
+      ),
+    },
+    {
+      key: "rating",
+      label: "Rating",
+      render: (_, row) => (
+        <div className="flex items-center gap-1">
+          <Star size={14} className="text-yellow-400 fill-yellow-400" />
+          <span>{row.rating || "-"}</span>
+        </div>
+      ),
+    },
+    {
+      key: "verified",
+      label: "Verified",
+      render: (_, row) => (
+        <span
+          className={`px-2 py-1 rounded text-xs ${
+            row.verified
+              ? "bg-green-500/20 text-green-400"
+              : "bg-slate-500/20 text-slate-400"
+          }`}
+        >
+          {row.verified ? "Yes" : "No"}
+        </span>
+      ),
+    },
+    {
+      key: "date",
+      label: "Date",
+      render: (_, row) => new Date(row.createdAt).toLocaleDateString(),
+    },
+  ];
+
+  const reviewActions = [
+    {
+      label: "View Details",
+      className: "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30",
+      onClick: (row) => {
+        setSelectedReview(row);
+        setReviewModalOpen(true);
+      },
+    },
+  ];
+
+  // ===== RENDER USER REVIEWS =====
+  const renderUserReviews = () => (
+    <div className="space-y-4">
+      <h2 className="text-2xl font-bold text-white mb-6">My Reviews</h2>
+
+      <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
+        {/* Search */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-3 text-slate-400" size={18} />
+          <input
+            type="text"
+            placeholder="Search by location or comment..."
+            value={reviewSearchTerm}
+            onChange={(e) => setReviewSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-slate-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
+        {filteredUserReviews.length > 0 ? (
+          <DataTable
+            columns={reviewColumns}
+            data={filteredUserReviews}
+            actions={reviewActions}
+          />
+        ) : (
+          <p className="text-slate-400 text-center py-6">No reviews found</p>
+        )}
+      </div>
+
+      {/* Review Details Modal */}
+      <Modal
+        isOpen={reviewModalOpen}
+        title="Review Details"
+        onClose={() => {
+          setReviewModalOpen(false);
+          setSelectedReview(null);
+        }}
+      >
+        {selectedReview && (
+          <div className="space-y-4">
+            <div>
+              <p className="text-slate-400 text-xs uppercase mb-1">Location</p>
+              <p className="text-white font-medium">
+                {selectedReview.locationName || "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs uppercase mb-1">Comment</p>
+              <p className="text-white font-medium">
+                {selectedReview.comment || "-"}
+              </p>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs uppercase mb-1">Rating</p>
+              <div className="flex items-center gap-2">
+                {[...Array(5)].map((_, i) => (
+                  <Star
+                    key={i}
+                    size={20}
+                    className={
+                      i < (selectedReview.rating || 0)
+                        ? "text-yellow-400 fill-yellow-400"
+                        : "text-slate-600"
+                    }
+                  />
+                ))}
+                <span className="text-white font-medium ml-2">
+                  {selectedReview.rating || 0}/5
+                </span>
+              </div>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs uppercase mb-1">Verified</p>
+              <span
+                className={`inline-block px-3 py-1 rounded text-sm ${
+                  selectedReview.verified
+                    ? "bg-green-500/20 text-green-400"
+                    : "bg-slate-500/20 text-slate-400"
+                }`}
+              >
+                {selectedReview.verified ? "Verified" : "Not Verified"}
+              </span>
+            </div>
+            <div>
+              <p className="text-slate-400 text-xs uppercase mb-1">Date</p>
+              <p className="text-white font-medium">
+                {new Date(selectedReview.createdAt).toLocaleString()}
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+    </div>
+  );
+
   // ===== OPEN LOCALHOST ASSIGNMENT MODAL =====
   const openLocalhostModal = (trip) => {
     setSelectedTripForLocalhost(trip);
     setLocalhostModalOpen(true);
     fetchAvailableLocalhosts(trip.destination || trip.locationName);
   };
+
   useEffect(() => {
     if (activeMenu === "localhost") {
       fetchLocalhosts();
@@ -189,6 +461,7 @@ export default function UserDashboard() {
     { id: "trips", label: "My Trips", icon: MapPin },
     { id: "localhost", label: "Local Hosts", icon: Hotel },
     { id: "partnerup", label: "Partner Up", icon: Users2 },
+    { id: "reviews", label: "My Reviews", icon: Star },
   ];
 
   // ===== RENDER CONTENT =====
@@ -209,43 +482,54 @@ export default function UserDashboard() {
             </div>
             {recentTrips.length > 0 ? (
               recentTrips.map((trip, idx) => (
-                <div key={idx} className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
+                <div
+                  key={idx}
+                  className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6"
+                >
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-white mb-2">
-                        {trip.destination || trip.locationName || 'Trip'}
+                        {trip.destination || trip.locationName || "Trip"}
                       </h3>
                       <div className="flex items-center gap-4 text-sm text-slate-400">
                         {trip.startDate && (
                           <span className="flex items-center gap-1">
                             <Calendar size={16} />
-                            {new Date(trip.startDate).toLocaleDateString()} 
-                            {trip.endDate && ` - ${new Date(trip.endDate).toLocaleDateString()}`}
+                            {new Date(trip.startDate).toLocaleDateString()}
+                            {trip.endDate &&
+                              ` - ${new Date(
+                                trip.endDate
+                              ).toLocaleDateString()}`}
                           </span>
                         )}
                         <span className="flex items-center gap-1">
-                          <DollarSign size={16} />
-                          ${trip.budget || 0}
+                          <DollarSign size={16} />${trip.budget || 0}
                         </span>
                       </div>
                     </div>
                     {trip.startDate && (
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        new Date(trip.startDate) > new Date() 
-                          ? 'bg-green-500/20 text-green-400' 
-                          : 'bg-blue-500/20 text-blue-400'
-                      }`}>
-                        {new Date(trip.startDate) > new Date() ? 'Upcoming' : 'Completed'}
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          new Date(trip.startDate) > new Date()
+                            ? "bg-green-500/20 text-green-400"
+                            : "bg-blue-500/20 text-blue-400"
+                        }`}
+                      >
+                        {new Date(trip.startDate) > new Date()
+                          ? "Upcoming"
+                          : "Completed"}
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="bg-slate-700/30 rounded-lg p-4 relative">
                       <p className="text-slate-400 text-xs mb-2">Local Host</p>
                       <div className="flex items-center justify-between">
                         <p className="text-white font-semibold">
-                          {trip.localhostName || trip.localhost || 'Not assigned'}
+                          {trip.localhostName ||
+                            trip.localhost ||
+                            "Not assigned"}
                         </p>
                         <button
                           onClick={() => openLocalhostModal(trip)}
@@ -282,17 +566,26 @@ export default function UserDashboard() {
       case "localhost":
         return (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">My Local Hosts</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">
+              My Local Hosts
+            </h2>
             {localhosts.length > 0 ? (
               localhosts.map((host, idx) => (
-                <div key={idx} className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
+                <div
+                  key={idx}
+                  className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6"
+                >
                   <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
                       <Hotel className="text-white" size={24} />
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-white">{host.name}</h3>
-                      <p className="text-slate-400 text-sm">{host.locationName}</p>
+                      <h3 className="text-lg font-bold text-white">
+                        {host.name}
+                      </h3>
+                      <p className="text-slate-400 text-sm">
+                        {host.locationName}
+                      </p>
                       <p className="text-slate-500 text-xs">ID: {host._id}</p>
                     </div>
                     {host.email && (
@@ -305,7 +598,9 @@ export default function UserDashboard() {
                 </div>
               ))
             ) : (
-              <p className="text-slate-400 text-center py-12">No local hosts added to your trips yet</p>
+              <p className="text-slate-400 text-center py-12">
+                No local hosts added to your trips yet
+              </p>
             )}
           </div>
         );
@@ -313,38 +608,55 @@ export default function UserDashboard() {
       case "partnerup":
         return (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white mb-6">My Partner Ups</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">
+              My Partner Ups
+            </h2>
             {partnerUps.length > 0 ? (
               partnerUps.map((partner, idx) => (
-                <div key={idx} className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
+                <div
+                  key={idx}
+                  className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
                         <Users2 className="text-white" size={24} />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-white">{partner.placeName}</h3>
-                        <p className="text-slate-400 text-sm">{partner.locationName || 'Location'}</p>
+                        <h3 className="text-lg font-bold text-white">
+                          {partner.placeName}
+                        </h3>
+                        <p className="text-slate-400 text-sm">
+                          {partner.locationName || "Location"}
+                        </p>
                         <p className="text-slate-500 text-xs mt-1">
-                          {partner.members?.length || 0} / {partner.maxMembers} members
+                          {partner.members?.length || 0} / {partner.maxMembers}{" "}
+                          members
                         </p>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      partner.status === 'open' 
-                        ? 'bg-green-500/20 text-green-400' 
-                        : 'bg-slate-500/20 text-slate-400'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        partner.status === "open"
+                          ? "bg-green-500/20 text-green-400"
+                          : "bg-slate-500/20 text-slate-400"
+                      }`}
+                    >
                       {partner.status}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-slate-400 text-center py-12">No partner ups yet</p>
+              <p className="text-slate-400 text-center py-12">
+                No partner ups yet
+              </p>
             )}
           </div>
         );
+
+      case "reviews":
+        return renderUserReviews();
 
       default:
         return (
@@ -352,22 +664,30 @@ export default function UserDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-4">
                 <MapPin className="text-white/80 mb-2" size={24} />
-                <p className="text-2xl font-bold text-white">{stats.totalTrips}</p>
+                <p className="text-2xl font-bold text-white">
+                  {stats.totalTrips}
+                </p>
                 <p className="text-blue-100 text-xs">Total Trips</p>
               </div>
               <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl p-4">
                 <Calendar className="text-white/80 mb-2" size={24} />
-                <p className="text-2xl font-bold text-white">{stats.upcomingTrips}</p>
+                <p className="text-2xl font-bold text-white">
+                  {stats.upcomingTrips}
+                </p>
                 <p className="text-teal-100 text-xs">Upcoming</p>
               </div>
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-4">
                 <TrendingUp className="text-white/80 mb-2" size={24} />
-                <p className="text-2xl font-bold text-white">{stats.completedTrips}</p>
+                <p className="text-2xl font-bold text-white">
+                  {stats.completedTrips}
+                </p>
                 <p className="text-purple-100 text-xs">Completed</p>
               </div>
               <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-4">
                 <DollarSign className="text-white/80 mb-2" size={24} />
-                <p className="text-2xl font-bold text-white">${stats.totalSpent}</p>
+                <p className="text-2xl font-bold text-white">
+                  ${stats.totalSpent}
+                </p>
                 <p className="text-orange-100 text-xs">Total Spent</p>
               </div>
             </div>
@@ -385,13 +705,16 @@ export default function UserDashboard() {
               <div className="space-y-3">
                 {recentTrips.length > 0 ? (
                   recentTrips.slice(0, 3).map((trip, idx) => (
-                    <div key={idx} className="flex items-center gap-4 p-3 bg-slate-700/50 rounded-lg">
+                    <div
+                      key={idx}
+                      className="flex items-center gap-4 p-3 bg-slate-700/50 rounded-lg"
+                    >
                       <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center">
                         <Hotel className="text-white" size={20} />
                       </div>
                       <div className="flex-1">
                         <p className="text-white font-semibold text-sm">
-                          {trip.destination || trip.locationName || 'Trip'}
+                          {trip.destination || trip.locationName || "Trip"}
                         </p>
                         <p className="text-slate-400 text-xs">
                           {trip.numberOfDays || 0} days • ${trip.budget || 0}
@@ -399,7 +722,9 @@ export default function UserDashboard() {
                       </div>
                       {trip.startDate && (
                         <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-medium">
-                          {new Date(trip.startDate) > new Date() ? 'Upcoming' : 'Completed'}
+                          {new Date(trip.startDate) > new Date()
+                            ? "Upcoming"
+                            : "Completed"}
                         </span>
                       )}
                     </div>
@@ -453,11 +778,12 @@ export default function UserDashboard() {
         <div className="p-4 border-b border-slate-700">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center text-white font-bold text-lg">
-              {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+              {user?.name?.charAt(0).toUpperCase() ||
+                user?.email?.charAt(0).toUpperCase()}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm truncate">
-                {user?.name || user?.email?.split('@')[0]}
+                {user?.name || user?.email?.split("@")[0]}
               </p>
               <button
                 onClick={() => setEditModalOpen(true)}
@@ -477,7 +803,7 @@ export default function UserDashboard() {
             <Home size={20} />
             <span className="text-sm font-medium">Home</span>
           </button>
-          
+
           {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeMenu === item.id;
@@ -519,20 +845,23 @@ export default function UserDashboard() {
             <ChevronRight size={16} />
             <span className="text-white">User Profile</span>
           </div>
-          
+
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-white mb-2">User Profile</h1>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                User Profile
+              </h1>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-xs text-slate-400 uppercase">Traveler</p>
                 <p className="text-white font-bold text-lg">
-                  {user?.name || user?.email?.split('@')[0]}
+                  {user?.name || user?.email?.split("@")[0]}
                 </p>
               </div>
               <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center text-white font-bold text-xl">
-                {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                {user?.name?.charAt(0).toUpperCase() ||
+                  user?.email?.charAt(0).toUpperCase()}
               </div>
             </div>
           </div>
@@ -541,33 +870,44 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
-              <h2 className="text-xl font-bold text-white mb-4">Personal Info</h2>
+              <h2 className="text-xl font-bold text-white mb-4">
+                Personal Info
+              </h2>
               <div className="flex flex-col md:flex-row gap-6">
                 <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-400 to-teal-400 flex items-center justify-center flex-shrink-0">
                   <span className="text-white font-bold text-4xl">
-                    {user?.name?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase()}
+                    {user?.name?.charAt(0).toUpperCase() ||
+                      user?.email?.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-slate-400 text-xs uppercase mb-1">Name</p>
+                    <p className="text-slate-400 text-xs uppercase mb-1">
+                      Name
+                    </p>
                     <p className="text-white font-semibold">
-                      {user?.name || 'Not Set'}
+                      {user?.name || "Not Set"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-400 text-xs uppercase mb-1">Phone</p>
+                    <p className="text-slate-400 text-xs uppercase mb-1">
+                      Phone
+                    </p>
                     <p className="text-white font-semibold">
-                      {user?.phone || 'Not Set'}
+                      {user?.phone || "Not Set"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-slate-400 text-xs uppercase mb-1">Email Address</p>
+                    <p className="text-slate-400 text-xs uppercase mb-1">
+                      Email Address
+                    </p>
                     <p className="text-white font-semibold">{user?.email}</p>
                   </div>
                   <div>
                     <p className="text-slate-400 text-xs uppercase mb-1">Age</p>
-                    <p className="text-white font-semibold">{user?.age || 'Not Set'}</p>
+                    <p className="text-white font-semibold">
+                      {user?.age || "Not Set"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -578,7 +918,9 @@ export default function UserDashboard() {
 
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur border border-slate-700 rounded-xl p-6">
-              <h2 className="text-white text-sm font-semibold mb-4">Quick Actions</h2>
+              <h2 className="text-white text-sm font-semibold mb-4">
+                Quick Actions
+              </h2>
               <div className="space-y-2">
                 <button
                   onClick={() => navigate("/booking")}
@@ -608,6 +950,13 @@ export default function UserDashboard() {
                   <span>Partner Ups</span>
                   <ChevronRight size={16} />
                 </button>
+                <button
+                  onClick={() => setActiveMenu("reviews")}
+                  className="w-full px-4 py-3 bg-slate-700/50 hover:bg-slate-700 text-white rounded-lg text-sm text-left flex items-center justify-between transition"
+                >
+                  <span>My Reviews</span>
+                  <ChevronRight size={16} />
+                </button>
               </div>
             </div>
           </div>
@@ -621,21 +970,29 @@ export default function UserDashboard() {
             <h2 className="text-2xl font-bold text-white mb-4">Edit Profile</h2>
             <div className="space-y-4">
               <div>
-                <label className="text-slate-400 text-sm mb-1 block">Name</label>
+                <label className="text-slate-400 text-sm mb-1 block">
+                  Name
+                </label>
                 <input
                   type="text"
-                  value={user?.name || ''}
+                  value={user?.name || ""}
                   disabled
                   className="w-full px-4 py-2 bg-slate-700/50 text-slate-400 rounded-lg cursor-not-allowed"
                 />
-                <p className="text-slate-500 text-xs mt-1">Name cannot be changed</p>
+                <p className="text-slate-500 text-xs mt-1">
+                  Name cannot be changed
+                </p>
               </div>
               <div>
-                <label className="text-slate-400 text-sm mb-1 block">Phone</label>
+                <label className="text-slate-400 text-sm mb-1 block">
+                  Phone
+                </label>
                 <input
                   type="tel"
                   value={profileData.phone}
-                  onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                  onChange={(e) =>
+                    setProfileData({ ...profileData, phone: e.target.value })
+                  }
                   className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter phone number"
                 />
@@ -645,7 +1002,9 @@ export default function UserDashboard() {
                 <input
                   type="number"
                   value={profileData.age}
-                  onChange={(e) => setProfileData({...profileData, age: e.target.value})}
+                  onChange={(e) =>
+                    setProfileData({ ...profileData, age: e.target.value })
+                  }
                   className="w-full px-4 py-2 bg-slate-700 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter age"
                 />
@@ -674,12 +1033,15 @@ export default function UserDashboard() {
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b border-slate-700">
-              <h3 className="text-2xl font-bold text-white">Assign Local Host</h3>
+              <h3 className="text-2xl font-bold text-white">
+                Assign Local Host
+              </h3>
               <p className="text-slate-400 mt-2">
-                {selectedTripForLocalhost?.locationName || selectedTripForLocalhost?.destination}
+                {selectedTripForLocalhost?.locationName ||
+                  selectedTripForLocalhost?.destination}
               </p>
             </div>
-            
+
             <div className="p-6 space-y-4">
               {loadingLocalhosts ? (
                 <div className="text-center py-8">
@@ -697,8 +1059,12 @@ export default function UserDashboard() {
                         <Hotel className="text-white" size={20} />
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-lg font-bold text-white">{host.name}</h4>
-                        <p className="text-slate-400 text-sm">{host.locationName}</p>
+                        <h4 className="text-lg font-bold text-white">
+                          {host.name}
+                        </h4>
+                        <p className="text-slate-400 text-sm">
+                          {host.locationName}
+                        </p>
                         <p className="text-slate-500 text-xs">ID: {host._id}</p>
                       </div>
                       <div className="text-right">
@@ -714,11 +1080,13 @@ export default function UserDashboard() {
                 ))
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-slate-400">No local hosts available for this location</p>
+                  <p className="text-slate-400">
+                    No local hosts available for this location
+                  </p>
                 </div>
               )}
             </div>
-            
+
             <div className="p-6 border-t border-slate-700 flex justify-end gap-4">
               <button
                 onClick={() => {

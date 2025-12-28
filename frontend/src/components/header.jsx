@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import API from "../api";
 import { Bell, X, Check, Shield } from "lucide-react";
 import { motion } from "framer-motion";
@@ -106,15 +106,28 @@ export default function Navigation() {
   }, []);
 
   return (
-    <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 backdrop-blur-lg bg-white/10 border border-white/20 rounded-full w-[95%]">
-      <div className="max-w-7xl mx-auto px-6 py-3 flex items-center">
+    <header className="fixed top-1 left-1/2 -translate-x-1/2 z-50 backdrop-blur-lg bg-black/60 border border-white/20 rounded-full w-[95%] h-18">
+      <div className="max-w-7xl mx-auto px-6 mt-3  flex items-center">
         {/* LEFT — NAVIGATION */}
-        <nav className="flex gap-4 sm:gap-6 md:gap-8 lg:gap-12 text-black font-medium text-sm sm:text-base">
-          {["Destinations", "Blog", "Contact"].map((item, idx) => (
-            <a
+          <div className="flex-shrink-0 -ml-20 px-3">
+            <a href="/HomePage">
+            <img
+              src="/logoA.png" // replace with your logo file path
+              alt="AiVoyager Logo"
+              className="h-9 w-auto" // 40px height, auto width
+            /></a>
+          </div>
+        <nav className="flex gap-4 sm:gap-6 md:gap-8 lg:gap-12 text-white font-medium text-sm sm:text-base ml-0.5">
+          {["Destinations", "Mission", "Contact"].map((item, idx) => (
+            <button
               key={item}
-              href={`#${item.toLowerCase()}`}
-              className="hover:text-blue-200 transition whitespace-nowrap"
+              type="button"
+              onClick={() =>
+                document
+                  .getElementById(item.toLowerCase())
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="hover:text-blue-200 transition whitespace-nowrap bg-transparent"
               style={{
                 animation: `navItemSlideDown 0.5s ease-out ${
                   0.1 + idx * 0.06
@@ -122,12 +135,12 @@ export default function Navigation() {
               }}
             >
               {item}
-            </a>
+            </button>
           ))}
         </nav>
 
         {/* RIGHT — Notifications + Profile + Logout */}
-        <div className="flex items-center gap-3 sm:gap-4 shrink-0 justify-end ml-140">
+        <div className="flex items-center gap-3 sm:gap-4 shrink-0 justify-end ml-85">
           {/* Admin Button (only for admins) */}
           {user?.role === "admin" && (
             <button

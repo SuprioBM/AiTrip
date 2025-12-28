@@ -92,6 +92,50 @@ export const getLocationReviews = async (req, res, next) => {
   }
 };
 
+
+
+/**
+ * Get a single review by ID
+ */
+export const getReviewById = async (req, res, next) => {
+  try {
+    const  reviewId  = req.query.userId;
+    
+
+    const reviews = await Review.find({ userId: reviewId });
+
+    if (!reviews) {
+      return res.status(404).json({ message: "Review not found" });
+    }
+
+    res.json({
+      success: true,
+      reviews,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Admin: Get all reviews without pagination or filters
+ */
+export const getAllReviewsAdmin = async (req, res, next) => {
+  try {
+    const reviews = await Review.find({})
+      .populate("userId", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      reviews,
+      totalReviews: reviews.length,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * Update an existing review (rating and/or comment)
  * Only allows users to update their own reviews

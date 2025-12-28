@@ -26,14 +26,7 @@ export default function TopNav({ onMenuToggle }) {
             <span className="text-sm font-medium">Home</span>
           </button>
 
-          <div className="hidden md:flex items-center gap-2 bg-secondary/50 px-4 py-2 rounded-lg flex-1 max-w-md">
-            <Search size={18} className="text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search users, trips, bookings..."
-              className="bg-transparent text-sm outline-none w-full text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
+          
         </div>
 
         {/* Right - Notifications + Profile */}

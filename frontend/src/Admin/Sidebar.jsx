@@ -20,7 +20,6 @@ const menuItems = [
   { id: "users", label: "Users Management", icon: Users },
   { id: "trips", label: "Trip Plans", icon: MapPin },
   { id: "hosts", label: "Local Hosts", icon: Home },
-  { id: "bookings", label: "Bookings", icon: Calendar },
   { id: "partners", label: "Tour Partners", icon: Users2 },
   { id: "reviews", label: "Reviews & Reports", icon: MessageSquare },
   { id: "settings", label: "Settings", icon: Settings }

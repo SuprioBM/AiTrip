@@ -85,6 +85,7 @@ export const requestToJoinPartnerUp = async (req, res) => {
 
     const member = await PartnerUpMember.create({
       partnerUp: partnerUpId,
+      createdBy: partnerUp.createdBy,
       user: userId,
       status: "pending",
       placeName: placeName || partnerUp.placeName,
@@ -269,13 +270,20 @@ export const respondToJoinRequest = async (req, res) => {
 // GET all members for a partnerUp with their status
 export const getPartnerUpMembers = async (req, res) => {
   try {
-    const { partnerUpId } = req.params;
 
-    const members = await PartnerUpMember.find({
-      partnerUp: partnerUpId,
-    }).populate("user", "name email profilePic"); // optional
+    const userId = req.query.userId; // receive userID from request params
+    
 
-    res.json({ success: true, data: members });
+    // Fetch all PartnerUpMember entries for this user
+    const data = await PartnerUpMember.find({
+      $or: [
+        { user: userId },
+        { createdBy: userId }
+      ]
+    })
+
+    res.json({ success: true, data: data });
+    
   } catch (err) {
     console.error(err);
     res

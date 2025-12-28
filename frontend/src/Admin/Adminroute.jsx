@@ -27,8 +27,6 @@ function AdminRoute() {
         return <TripPlansPage />;
       case "hosts":
         return <LocalHostsPage />;
-      case "bookings":
-        return <BookingsPage />;
       case "partners":
         return <TourPartnersPage />;
       case "reviews":

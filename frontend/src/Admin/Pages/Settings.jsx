@@ -48,49 +48,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {/* App Settings */}
-      <div className="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-all duration-200">
-        <h2 className="text-lg font-semibold text-foreground mb-4">
-          App Settings
-        </h2>
-
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Max Trip Duration (days)
-            </label>
-            <input
-              type="number"
-              defaultValue="30"
-              className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Default Currency
-            </label>
-            <select className="appearance-none w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer pr-8">
-              <option>USD</option>
-              <option>EUR</option>
-              <option>GBP</option>
-              <option>JPY</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Commission Rate (%)
-            </label>
-            <input
-              type="number"
-              defaultValue="15"
-              step="0.1"
-              className="w-full px-4 py-2 bg-secondary border border-border rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-      </div>
+  
 
       {/* Preferences */}
       <div className="bg-card rounded-lg border border-border p-6 hover:shadow-lg transition-all duration-200">
