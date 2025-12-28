@@ -1,113 +1,106 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import { useAuth } from "../context/AuthContext";
-import MapComponent from "../components/MapComponent";
-import API from "../api";
-import {
-  Plus,
-  X,
-  Users,
-  Calendar,
-  DollarSign,
-  Clock,
-  
-} from "lucide-react";
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+import { useAuth } from '../context/AuthContext'
+import MapComponent from '../components/MapComponent'
+import API from '../api'
+import { Plus, X, Users, Calendar, DollarSign, Clock } from 'lucide-react'
 
 // Check for refresh BEFORE component renders
 const checkAndClearOnRefresh = () => {
-  const navigationEntries = performance.getEntriesByType("navigation");
+  const navigationEntries = performance.getEntriesByType('navigation')
   const wasRefreshed =
-    navigationEntries.length > 0 && navigationEntries[0].type === "reload";
+    navigationEntries.length > 0 && navigationEntries[0].type === 'reload'
 
   if (wasRefreshed) {
     // Clear all booking data on refresh
-    sessionStorage.removeItem("booking_formData");
-    sessionStorage.removeItem("booking_selectedLocation");
-    sessionStorage.removeItem("booking_mapMarkers");
-    sessionStorage.removeItem("booking_activeCategory");
-    sessionStorage.removeItem("booking_stats");
-    return true; // Was refreshed
+    sessionStorage.removeItem('booking_formData')
+    sessionStorage.removeItem('booking_selectedLocation')
+    sessionStorage.removeItem('booking_mapMarkers')
+    sessionStorage.removeItem('booking_activeCategory')
+    sessionStorage.removeItem('booking_stats')
+    return true // Was refreshed
   }
-  return false; // Normal navigation
-};
+  return false // Normal navigation
+}
 
 // Run check before component definition
-const wasPageRefreshed = checkAndClearOnRefresh();
+const wasPageRefreshed = checkAndClearOnRefresh()
 
 export default function BookingPage() {
-  const { user } = useAuth();
-  console.log(user);
-  
+  const { user } = useAuth()
+  // User object from AuthContext (used when assigning localhost / creating trips)
+  // console.log(user); // debug: commented out before pushing
+
   // Initialize from sessionStorage (will be empty if refreshed)
   const [formData, setFormData] = useState(() => {
     try {
-      const saved = sessionStorage.getItem("booking_formData");
+      const saved = sessionStorage.getItem('booking_formData')
       return saved
         ? JSON.parse(saved)
         : {
-            location: "",
-            travelDate: "",
-            budget: "medium",
-          };
+            location: '',
+            travelDate: '',
+            budget: 'medium',
+          }
     } catch {
       return {
-        location: "",
-        travelDate: "",
-        budget: "medium",
-      };
+        location: '',
+        travelDate: '',
+        budget: 'medium',
+      }
     }
-  });
+  })
 
   const [selectedLocation, setSelectedLocation] = useState(() => {
     try {
-      const saved = sessionStorage.getItem("booking_selectedLocation");
-      return saved ? JSON.parse(saved) : null;
+      const saved = sessionStorage.getItem('booking_selectedLocation')
+      return saved ? JSON.parse(saved) : null
     } catch {
-      return null;
+      return null
     }
-  });
+  })
 
   const [mapMarkers, setMapMarkers] = useState(() => {
     try {
-      const saved = sessionStorage.getItem("booking_mapMarkers");
-      return saved ? JSON.parse(saved) : [];
+      const saved = sessionStorage.getItem('booking_mapMarkers')
+      return saved ? JSON.parse(saved) : []
     } catch {
-      return [];
+      return []
     }
-  });
+  })
 
   const [activeCategory, setActiveCategory] = useState(() => {
-    return sessionStorage.getItem("booking_activeCategory") || "all";
-  });
+    return sessionStorage.getItem('booking_activeCategory') || 'all'
+  })
 
-  const [loadingAI, setLoadingAI] = useState(false);
+  const [loadingAI, setLoadingAI] = useState(false)
 
   const [stats, setStats] = useState(() => {
     try {
-      const saved = sessionStorage.getItem("booking_stats");
+      const saved = sessionStorage.getItem('booking_stats')
       return saved
         ? JSON.parse(saved)
-        : { places: 0, restaurants: 0, hotels: 0 };
+        : { places: 0, restaurants: 0, hotels: 0 }
     } catch {
-      return { places: 0, restaurants: 0, hotels: 0 };
+      return { places: 0, restaurants: 0, hotels: 0 }
     }
-  });
+  })
 
-  const [showPartnerUpForm, setShowPartnerUpForm] = useState(false);
+  const [showPartnerUpForm, setShowPartnerUpForm] = useState(false)
   const [partnerUpData, setPartnerUpData] = useState({
     numberOfPeople: 2,
     budgetMin: 1000,
     budgetMax: 5000,
     numberOfDays: 3,
-    startDate: "",
-    endDate: "",
-  });
-  const [matchingPartners, setMatchingPartners] = useState([]);
-  const [loadingPartners, setLoadingPartners] = useState(false);
-  const [myPartnerUp, setMyPartnerUp] = useState(null);
-  const [localhosts, setLocalhosts] = useState([]);
-  const [selectedLocalhost, setSelectedLocalhost] = useState(null);
-  const [loadingLocalhosts, setLoadingLocalhosts] = useState(false);
+    startDate: '',
+    endDate: '',
+  })
+  const [matchingPartners, setMatchingPartners] = useState([])
+  const [loadingPartners, setLoadingPartners] = useState(false)
+  const [myPartnerUp, setMyPartnerUp] = useState(null)
+  const [localhosts, setLocalhosts] = useState([])
+  const [selectedLocalhost, setSelectedLocalhost] = useState(null)
+  const [loadingLocalhosts, setLoadingLocalhosts] = useState(false)
 
   // Additional trip details
   const [tripDetails, setTripDetails] = useState({
@@ -115,28 +108,27 @@ export default function BookingPage() {
     endDate: '',
     numberOfDays: 0,
     budget: 0,
-  });
-  const [savingTrip, setSavingTrip] = useState(false);
-  
+  })
+  const [savingTrip, setSavingTrip] = useState(false)
 
   const searchPartners = async (lat, lon) => {
     // Search partner-ups by coordinates (preferred) or by selectedLocation
-    const useLat = typeof lat === "number" || (lat && !isNaN(Number(lat)));
-    const useLon = typeof lon === "number" || (lon && !isNaN(Number(lon)));
+    const useLat = typeof lat === 'number' || (lat && !isNaN(Number(lat)))
+    const useLon = typeof lon === 'number' || (lon && !isNaN(Number(lon)))
 
     // If no explicit coords passed, fall back to selectedLocation
     if (!useLat || !useLon) {
-      if (!selectedLocation) return;
+      if (!selectedLocation) return
     }
 
-    setLoadingPartners(true);
+    setLoadingPartners(true)
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
 
       const placeId =
         useLat && useLon
           ? `${lat}_${lon}`
-          : `${selectedLocation.lat}_${selectedLocation.lng}`;
+          : `${selectedLocation.lat}_${selectedLocation.lng}`
 
       const payload = {
         placeId,
@@ -144,69 +136,76 @@ export default function BookingPage() {
           useLat && useLon
             ? { lat: Number(lat), lon: Number(lon) }
             : { lat: selectedLocation.lat, lon: selectedLocation.lng },
-      };
+      }
 
       // Add dates if available
       if (formData.travelDate) {
-        payload.startDate = formData.travelDate;
-        payload.endDate = formData.travelDate;
+        payload.startDate = formData.travelDate
+        payload.endDate = formData.travelDate
       }
 
-      console.log("Searching for partners with:", payload);
+      // Debug: useful during development to inspect search payload
+      // console.log("Searching for partners with:", payload);
 
-      const { data } = await API.post("/partnerup/search", payload, {
+      const { data } = await API.post('/partnerup/search', payload, {
         headers: { Authorization: token ? `Bearer ${token}` : undefined },
-      });
+      })
 
       if (data && data.success) {
-        setMatchingPartners(data.data || []);
+        setMatchingPartners(data.data || [])
       } else {
-        setMatchingPartners([]);
+        setMatchingPartners([])
       }
     } catch (error) {
-      console.error("Error searching partners:", error);
-      setMatchingPartners([]);
+      console.error('Error searching partners:', error)
+      setMatchingPartners([])
     } finally {
-      setLoadingPartners(false);
+      setLoadingPartners(false)
     }
-  };
+  }
 
   // Update number of days when dates change
   useEffect(() => {
     if (tripDetails.startDate && tripDetails.endDate) {
-      const days = calculateDays(tripDetails.startDate, tripDetails.endDate);
-      setTripDetails(prev => ({ ...prev, numberOfDays: days }));
+      const days = calculateDays(tripDetails.startDate, tripDetails.endDate)
+      setTripDetails((prev) => ({ ...prev, numberOfDays: days }))
     }
-  }, [tripDetails.startDate, tripDetails.endDate]);
+  }, [tripDetails.startDate, tripDetails.endDate])
 
   // Calculate days between dates
   const calculateDays = (start, end) => {
-    if (!start || !end) return 0;
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const diffTime = Math.abs(endDate - startDate);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
+    if (!start || !end) return 0
+    const startDate = new Date(start)
+    const endDate = new Date(end)
+    const diffTime = Math.abs(endDate - startDate)
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
 
   // Assign localhost to trip
   const handleAssignLocalhost = async (host) => {
     if (!user) {
-      alert('Please login to assign localhost');
-      return;
+      alert('Please login to assign localhost')
+      return
     }
 
     if (!selectedLocation) {
-      alert('Please select a location first');
-      return;
+      alert('Please select a location first')
+      return
     }
 
-    setSavingTrip(true);
+    // Indicate UI is saving/creating the trip
+    setSavingTrip(true)
     try {
       // Create unique placeId combining location and localhost
-      const locationCode = selectedLocation.name.substring(0, 4).toLowerCase().replace(/\s/g, '');
-      const uniquePlaceId = `${locationCode}_${host._id}_${Date.now()}`;
-      
+      // NOTE: this is a simple unique id strategy used locally.
+      // Backend should ideally generate canonical unique ids; this is a client-side helper.
+      const locationCode = selectedLocation.name
+        .substring(0, 4)
+        .toLowerCase()
+        .replace(/\s/g, '')
+      const uniquePlaceId = `${locationCode}_${host._id}_${Date.now()}`
+
       const tripData = {
         locationName: selectedLocation.name,
         placeId: uniquePlaceId,
@@ -214,105 +213,113 @@ export default function BookingPage() {
         destination: selectedLocation.name,
         localhost: host._id,
         localhostName: host.name,
-      };
+      }
 
-      console.log('Assigning localhost to trip:', tripData);
-      const { data } = await API.post('/trips', tripData);
-      console.log('Response:', data);
-      
+      // console.log('Assigning localhost to trip:', tripData);
+      // POST to backend to create/save trip. Backend must accept: placeId, destination, selectedPins, localhost, etc.
+      const { data } = await API.post('/trips', tripData)
+      // console.log('Response:', data);
+
       if (data.trip) {
-        alert(`Localhost "${host.name}" assigned to your trip successfully! View it in your dashboard.`);
+        alert(
+          `Localhost "${host.name}" assigned to your trip successfully! View it in your dashboard.`
+        )
       }
     } catch (error) {
-      console.error('Error assigning localhost:', error);
-      console.error('Error response:', error.response?.data);
-      const errorMsg = error.response?.data?.message || error.message;
-      
+      console.error('Error assigning localhost:', error)
+      console.error('Error response:', error.response?.data)
+      const errorMsg = error.response?.data?.message || error.message
+
+      // Backend may reject duplicate trips; surface friendly messages to the user.
       if (errorMsg.includes('duplicate') || errorMsg.includes('unique')) {
-        alert('You have already created a trip for this location with this localhost. Check your dashboard.');
+        alert(
+          'You have already created a trip for this location with this localhost. Check your dashboard.'
+        )
       } else {
-        alert(`Failed to assign localhost: ${errorMsg}`);
+        alert(`Failed to assign localhost: ${errorMsg}`)
       }
     } finally {
-      setSavingTrip(false);
+      setSavingTrip(false)
     }
-  };
+  }
 
   // Fetch localhosts by location
   const fetchLocalhosts = async () => {
-    if (!selectedLocation) return;
+    if (!selectedLocation) return
 
-    setLoadingLocalhosts(true);
+    setLoadingLocalhosts(true)
     try {
       // Extract first 3 letters of location name
+      // NOTE: host lookup uses a simple location-code heuristic (first 3 letters).
+      // This is brittle for multi-word or short location names; consider using lat/lon or placeId.
       const locationCode = selectedLocation.name
         ? selectedLocation.name.toLowerCase().substring(0, 3)
-        : 'unk';
+        : 'unk'
 
-      console.log('🔍 Fetching localhosts for location code:', locationCode);
+      // console.log('🔍 Fetching localhosts for location code:', locationCode);
 
-      const { data } = await API.get(`/hosts/${locationCode}`);
-      
-      console.log('✅ Localhosts fetched:', data);
-      setLocalhosts(data.data || []);
+      const { data } = await API.get(`/hosts/${locationCode}`)
+
+      // console.log('✅ Localhosts fetched:', data);
+      setLocalhosts(data.data || [])
     } catch (error) {
-      console.error('Error fetching localhosts:', error);
-      setLocalhosts([]);
+      console.error('Error fetching localhosts:', error)
+      setLocalhosts([])
     } finally {
-      setLoadingLocalhosts(false);
+      setLoadingLocalhosts(false)
     }
-  };
+  }
 
   // Save to sessionStorage whenever state changes
   useEffect(() => {
-    sessionStorage.setItem("booking_formData", JSON.stringify(formData));
-  }, [formData]);
+    sessionStorage.setItem('booking_formData', JSON.stringify(formData))
+  }, [formData])
 
   useEffect(() => {
     if (selectedLocation) {
       sessionStorage.setItem(
-        "booking_selectedLocation",
+        'booking_selectedLocation',
         JSON.stringify(selectedLocation)
-      );
+      )
     }
-  }, [selectedLocation]);
+  }, [selectedLocation])
 
   useEffect(() => {
-    sessionStorage.setItem("booking_mapMarkers", JSON.stringify(mapMarkers));
-  }, [mapMarkers]);
+    sessionStorage.setItem('booking_mapMarkers', JSON.stringify(mapMarkers))
+  }, [mapMarkers])
 
   useEffect(() => {
-    sessionStorage.setItem("booking_activeCategory", activeCategory);
-  }, [activeCategory]);
+    sessionStorage.setItem('booking_activeCategory', activeCategory)
+  }, [activeCategory])
 
   useEffect(() => {
-    sessionStorage.setItem("booking_stats", JSON.stringify(stats));
-  }, [stats]);
+    sessionStorage.setItem('booking_stats', JSON.stringify(stats))
+  }, [stats])
 
   // Handle input changes
   const handleChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }));
-  };
+    }))
+  }
 
   // Submit and call backend
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
-    setLoadingAI(true);
-    setMapMarkers([]);
-    setStats({ places: 0, restaurants: 0, hotels: 0 });
+    setLoadingAI(true)
+    setMapMarkers([])
+    setStats({ places: 0, restaurants: 0, hotels: 0 })
 
     try {
-      const { data } = await API.post("/ai/trip-suggestions", {
+      const { data } = await API.post('/ai/trip-suggestions', {
         location: formData.location,
         budget: formData.budget,
-        include: ["places", "restaurants", "hotels"],
-      });
-      console.log(data);
+        include: ['places', 'restaurants', 'hotels'],
+      })
+      // console.log(data); // debug: AI response payload
 
       if (data.success) {
         // Set map center
@@ -320,10 +327,10 @@ export default function BookingPage() {
           name: data.location,
           lat: data.center.lat,
           lng: data.center.lng,
-        });
+        })
 
         // Combine all markers with categories
-        const allMarkers = [];
+        const allMarkers = []
 
         // Add places
         if (data.places && Array.isArray(data.places)) {
@@ -331,14 +338,14 @@ export default function BookingPage() {
             allMarkers.push({
               id: `place_${place.name}`,
               name: place.name,
-              description: place.shortDescription || "",
+              description: place.shortDescription || '',
               photos: place.photos || [],
               location: place.location,
-              category: "place",
-              categoryLabel: "🏛️ Attraction",
+              category: 'place',
+              categoryLabel: '🏛️ Attraction',
               wikipediaUrl: place.wikipediaUrl,
-            });
-          });
+            })
+          })
         }
 
         // Add restaurants
@@ -348,15 +355,15 @@ export default function BookingPage() {
               id: `restaurant_${restaurant.name}`,
               name: restaurant.name,
               description: `${restaurant.cuisine} • ${
-                restaurant.shortDescription || ""
+                restaurant.shortDescription || ''
               }`,
               photos: restaurant.photos || [],
               location: restaurant.location,
-              category: "restaurant",
-              categoryLabel: "🍽️ Restaurant",
+              category: 'restaurant',
+              categoryLabel: '🍽️ Restaurant',
               budget: restaurant.inferred_budget,
-            });
-          });
+            })
+          })
         }
 
         // Add hotels
@@ -365,86 +372,86 @@ export default function BookingPage() {
             allMarkers.push({
               id: `hotel_${hotel.name}`,
               name: hotel.name,
-              description: hotel.shortDescription || "",
+              description: hotel.shortDescription || '',
               photos: hotel.photos || [],
               location: hotel.location,
-              category: "hotel",
-              categoryLabel: "🏨 Hotel",
+              category: 'hotel',
+              categoryLabel: '🏨 Hotel',
               stars: hotel.stars,
-            });
-          });
+            })
+          })
         }
 
-        setMapMarkers(allMarkers);
+        setMapMarkers(allMarkers)
         setStats({
           places: data.places?.length || 0,
           restaurants: data.restaurants?.length || 0,
           hotels: data.hotels?.length || 0,
-        });
+        })
         //call partnerup search fucntion here based on coordinates lat-lan , if exist then it will show on the partnerup section
-        searchPartners();
-        console.log(`✅ Loaded ${allMarkers.length} markers on map`);
+        searchPartners()
+        // console.log(`✅ Loaded ${allMarkers.length} markers on map`);
       } else {
-        console.error("Backend error:", data.message);
+        console.error('Backend error:', data.message)
       }
     } catch (error) {
-      console.error("AI suggestion error:", error);
-      alert("Failed to get suggestions. Please try again.");
+      console.error('AI suggestion error:', error)
+      alert('Failed to get suggestions. Please try again.')
     } finally {
-      setLoadingAI(false);
+      setLoadingAI(false)
     }
-  };
+  }
 
   // Clear session storage (optional - call after booking complete)
   const clearBookingData = () => {
-    sessionStorage.removeItem("booking_formData");
-    sessionStorage.removeItem("booking_selectedLocation");
-    sessionStorage.removeItem("booking_mapMarkers");
-    sessionStorage.removeItem("booking_activeCategory");
-    sessionStorage.removeItem("booking_stats");
+    sessionStorage.removeItem('booking_formData')
+    sessionStorage.removeItem('booking_selectedLocation')
+    sessionStorage.removeItem('booking_mapMarkers')
+    sessionStorage.removeItem('booking_activeCategory')
+    sessionStorage.removeItem('booking_stats')
 
     setFormData({
-      location: "",
-      travelDate: "",
-      budget: "medium",
-    });
-    setSelectedLocation(null);
-    setMapMarkers([]);
-    setActiveCategory("all");
-    setStats({ places: 0, restaurants: 0, hotels: 0 });
-  };
+      location: '',
+      travelDate: '',
+      budget: 'medium',
+    })
+    setSelectedLocation(null)
+    setMapMarkers([])
+    setActiveCategory('all')
+    setStats({ places: 0, restaurants: 0, hotels: 0 })
+  }
 
   // Filter markers by category
   const getFilteredMarkers = () => {
-    if (activeCategory === "all") return mapMarkers;
-    return mapMarkers.filter((m) => m.category === activeCategory);
-  };
+    if (activeCategory === 'all') return mapMarkers
+    return mapMarkers.filter((m) => m.category === activeCategory)
+  }
 
   // Handle PartnerUp form changes
   const handlePartnerUpChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setPartnerUpData((prev) => ({
       ...prev,
       [name]:
-        name.includes("budget") || name.includes("number")
+        name.includes('budget') || name.includes('number')
           ? parseInt(value) || 0
           : value,
-    }));
-  };
+    }))
+  }
 
   // Create PartnerUp
   const handleCreatePartnerUp = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!selectedLocation) {
-      alert("Please search for a location first");
-      return;
+      alert('Please search for a location first')
+      return
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       const { data } = await API.post(
-        "/partnerup/create",
+        '/partnerup/create',
         {
           placeId: `${selectedLocation.lat}_${selectedLocation.lng}`,
           placeName: selectedLocation.name,
@@ -466,34 +473,39 @@ export default function BookingPage() {
             Authorization: `Bearer ${token}`,
           },
         }
-      );
+      )
 
       if (data.success) {
-        setMyPartnerUp(data.data);
-        setShowPartnerUpForm(false);
-        alert("PartnerUp created successfully!");
+        setMyPartnerUp(data.data)
+        setShowPartnerUpForm(false)
+        alert('PartnerUp created successfully!')
         // Search for matching partners
-        searchPartners();
+        searchPartners()
       }
     } catch (error) {
-      console.error("Error creating PartnerUp:", error);
-      alert(error.response?.data?.message || "Failed to create PartnerUp");
+      console.error('Error creating PartnerUp:', error)
+      alert(error.response?.data?.message || 'Failed to create PartnerUp')
     }
-  };
+  }
 
   // Search for matching partners is implemented above (supports coords or selectedLocation)
 
   // Send partner request (include place snapshot)
   const handleSendPartnerRequest = async (partnerUpId, partner) => {
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
 
       const payload = {
-        placeName: (partner && partner.placeName) || (selectedLocation && selectedLocation.name),
+        placeName:
+          (partner && partner.placeName) ||
+          (selectedLocation && selectedLocation.name),
         location:
           (partner && partner.location) ||
-          (selectedLocation && { lat: selectedLocation.lat, lon: selectedLocation.lng }),
-      };
+          (selectedLocation && {
+            lat: selectedLocation.lat,
+            lon: selectedLocation.lng,
+          }),
+      }
 
       const { data } = await API.post(
         `/partnerup/request/${partnerUpId}`,
@@ -503,33 +515,31 @@ export default function BookingPage() {
             Authorization: `Bearer ${token}`,
           },
         }
-      );
+      )
 
       if (data && data.success) {
-        alert("Partner request sent successfully!");
+        alert('Partner request sent successfully!')
       }
     } catch (error) {
-      console.error("Error sending partner request:", error);
-      alert(error.response?.data?.message || "Failed to send request");
+      console.error('Error sending partner request:', error)
+      alert(error.response?.data?.message || 'Failed to send request')
     }
-  };
+  }
 
   // Search for partners when location changes - remove date dependency for better matching
   useEffect(() => {
     if (selectedLocation) {
-      searchPartners();
-      fetchLocalhosts(); // Fetch localhosts when location changes
+      searchPartners()
+      fetchLocalhosts() // Fetch localhosts when location changes
     }
-  }, [selectedLocation]);
+  }, [selectedLocation])
 
   // Also search when travel date changes
   useEffect(() => {
     if (selectedLocation && formData.travelDate) {
-      searchPartners();
+      searchPartners()
     }
-  }, [formData.travelDate]);
-
-  
+  }, [formData.travelDate])
 
   return (
     <div className="min-h-screen bg-white py-23 px-4">
@@ -585,7 +595,7 @@ export default function BookingPage() {
                   value={formData.travelDate}
                   onChange={handleChange}
                   required
-                  min={new Date().toISOString().split("T")[0]}
+                  min={new Date().toISOString().split('T')[0]}
                   className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
                 />
               </div>
@@ -614,11 +624,11 @@ export default function BookingPage() {
                 whileHover={{ scale: loadingAI ? 1 : 1.02 }}
                 className={`w-full py-4 rounded-xl font-semibold text-lg shadow-lg transition-all ${
                   loadingAI
-                    ? "bg-gray-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-teal-500 to-blue-500 text-white"
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-teal-500 to-blue-500 text-white'
                 }`}
               >
-                {loadingAI ? "Loading..." : "Get Suggestions"}
+                {loadingAI ? 'Loading...' : 'Get Suggestions'}
               </motion.button>
             </form>
 
@@ -767,8 +777,8 @@ export default function BookingPage() {
                   ) : (
                     <div className="text-center py-4 text-gray-500 text-sm">
                       {selectedLocation
-                        ? "No matching partners yet. Be the first to create a trip plan!"
-                        : "Search for a location to find travel partners"}
+                        ? 'No matching partners yet. Be the first to create a trip plan!'
+                        : 'Search for a location to find travel partners'}
                     </div>
                   )}
                 </div>
@@ -789,13 +799,21 @@ export default function BookingPage() {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900">{host.name}</h4>
-                              <p className="text-sm text-gray-600">{host.locationName}</p>
+                              <h4 className="font-semibold text-gray-900">
+                                {host.name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {host.locationName}
+                              </p>
                               {host.email && (
-                                <p className="text-xs text-gray-500 mt-2">📧 {host.email}</p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                  📧 {host.email}
+                                </p>
                               )}
                               {host.phone && (
-                                <p className="text-xs text-gray-500">📱 {host.phone}</p>
+                                <p className="text-xs text-gray-500">
+                                  📱 {host.phone}
+                                </p>
                               )}
                             </div>
                             <button
@@ -835,41 +853,41 @@ export default function BookingPage() {
               {mapMarkers.length > 0 && (
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setActiveCategory("all")}
+                    onClick={() => setActiveCategory('all')}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                      activeCategory === "all"
-                        ? "bg-teal-500 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      activeCategory === 'all'
+                        ? 'bg-teal-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     All
                   </button>
                   <button
-                    onClick={() => setActiveCategory("place")}
+                    onClick={() => setActiveCategory('place')}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                      activeCategory === "place"
-                        ? "bg-purple-500 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      activeCategory === 'place'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     🏛️
                   </button>
                   <button
-                    onClick={() => setActiveCategory("restaurant")}
+                    onClick={() => setActiveCategory('restaurant')}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                      activeCategory === "restaurant"
-                        ? "bg-orange-500 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      activeCategory === 'restaurant'
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     🍽️
                   </button>
                   <button
-                    onClick={() => setActiveCategory("hotel")}
+                    onClick={() => setActiveCategory('hotel')}
                     className={`px-3 py-1 rounded-lg text-sm font-medium transition-all ${
-                      activeCategory === "hotel"
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                      activeCategory === 'hotel'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                     }`}
                   >
                     🏨
@@ -989,7 +1007,7 @@ export default function BookingPage() {
                     name="startDate"
                     value={partnerUpData.startDate}
                     onChange={handlePartnerUpChange}
-                    min={new Date().toISOString().split("T")[0]}
+                    min={new Date().toISOString().split('T')[0]}
                     required
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
                   />
@@ -1005,7 +1023,7 @@ export default function BookingPage() {
                     onChange={handlePartnerUpChange}
                     min={
                       partnerUpData.startDate ||
-                      new Date().toISOString().split("T")[0]
+                      new Date().toISOString().split('T')[0]
                     }
                     required
                     className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-teal-500"
@@ -1033,5 +1051,5 @@ export default function BookingPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
   Star,
@@ -10,39 +10,45 @@ import {
   Edit2,
   X,
   Check,
-} from "lucide-react";
-import axios from "axios";
+} from 'lucide-react'
+import axios from 'axios'
 
 const DetailsPage = () => {
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
+  // NOTE: This page displays details for a selected place and manages reviews.
+  // - Expects `data` payload via URL search param (decoded JSON).
+  // - Uses backend endpoints at `http://localhost:5000/api/reviews` for CRUD.
+  //   Ensure the backend routes exist and accept the fields used below.
+  // - Known fragile areas: token parsing (JWT payload may use different keys),
+  //   and the fixed localhost URL used for API calls (update to environment variable for production).
 
-  const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
+  const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
 
   // Place data from URL params
-  const [placeData, setPlaceData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [placeData, setPlaceData] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   // Tab navigation: "details" or "reviews"
-  const [activeTab, setActiveTab] = useState("details");
+  const [activeTab, setActiveTab] = useState('details')
 
   // Review data
-  const [reviews, setReviews] = useState([]);
-  const [averageRating, setAverageRating] = useState(0);
+  const [reviews, setReviews] = useState([])
+  const [averageRating, setAverageRating] = useState(0)
 
   // New review form
-  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
-  const [submitting, setSubmitting] = useState(false);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '' })
+  const [submitting, setSubmitting] = useState(false)
 
   // Edit review functionality
-  const [editingReviewId, setEditingReviewId] = useState(null);
-  const [editedReview, setEditedReview] = useState({ rating: 5, comment: "" });
-  const [currentUserId, setCurrentUserId] = useState(null);
+  const [editingReviewId, setEditingReviewId] = useState(null)
+  const [editedReview, setEditedReview] = useState({ rating: 5, comment: '' })
+  const [currentUserId, setCurrentUserId] = useState(null)
 
   // Load more tracking
-  const [loadMoreCount, setLoadMoreCount] = useState(0);
+  const [loadMoreCount, setLoadMoreCount] = useState(0)
 
   // Pagination
   const [pagination, setPagination] = useState({
@@ -51,104 +57,105 @@ const DetailsPage = () => {
     totalReviews: 0,
     hasNextPage: false,
     hasPrevPage: false,
-  });
+  })
 
-
-    const images = [
-      "/1.jpg",
-      "/2.jpg",
-      "/3.jpg",
-      "/4.jpg",
-    ];  
+  const images = ['/1.jpg', '/2.jpg', '/3.jpg', '/4.jpg']
   // ============================================================================
   // EFFECT: Load place data from URL on component mount
   // ============================================================================
   useEffect(() => {
     try {
-      const encodedData = searchParams.get("data");
+      const encodedData = searchParams.get('data')
       if (encodedData) {
-        const decodedData = decodeURIComponent(encodedData);
-        const parsedData = JSON.parse(decodedData);
-        setPlaceData(parsedData);
+        const decodedData = decodeURIComponent(encodedData)
+        const parsedData = JSON.parse(decodedData)
+        setPlaceData(parsedData)
       }
     } catch (error) {
-      console.error("Error parsing URL data:", error);
+      console.error('Error parsing URL data:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  }, [searchParams]);
+  }, [searchParams])
 
   // ============================================================================
   // FUNCTION: fetchReviews - Fetch paginated reviews for current location
   // ============================================================================
   const fetchReviews = async (limit, append = false) => {
-    if (!placeData) return;
+    if (!placeData) return
 
     try {
-      const locationId = placeData.xid || placeData.locationId || placeData.id;
+      const locationId = placeData.xid || placeData.locationId || placeData.id
       if (locationId) {
+        // Fetch paginated reviews for the current location from backend.
+        // NOTE: API base is hardcoded to localhost here; replace with `process.env` in production.
         const response = await axios.get(
           `http://localhost:5000/api/reviews/location/${locationId}?page=1&limit=${limit}`
-        );
+        )
 
         if (append) {
-          setReviews((prevReviews) => [...prevReviews, ...response.data.reviews]);
+          setReviews((prevReviews) => [
+            ...prevReviews,
+            ...response.data.reviews,
+          ])
         } else {
-          setReviews(response.data.reviews);
+          setReviews(response.data.reviews)
         }
-        setPagination(response.data.pagination);
-        setAverageRating(response.data.averageRating || 0);
+        setPagination(response.data.pagination)
+        setAverageRating(response.data.averageRating || 0)
       }
     } catch (error) {
-      console.error("Error fetching reviews:", error);
+      console.error('Error fetching reviews:', error)
     }
-  };
+  }
 
   // ============================================================================
   // EFFECT: Load reviews and user ID when Reviews tab is active
   // ============================================================================
   useEffect(() => {
-    if (activeTab === "reviews" && placeData) {
-      setLoadMoreCount(0);
-      fetchReviews(2);
+    if (activeTab === 'reviews' && placeData) {
+      setLoadMoreCount(0)
+      fetchReviews(2)
 
       // Extract user ID from JWT token
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       if (token) {
         try {
-          const payload = JSON.parse(atob(token.split(".")[1]));
-          setCurrentUserId(payload.userId || payload.id || payload._id);
+          // We decode the JWT here to determine current user id for edit/delete permissions.
+          // Different auth backends may place the id under `userId`, `id`, or `_id`.
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          setCurrentUserId(payload.userId || payload.id || payload._id)
         } catch (error) {
-          console.error("Error parsing token:", error);
+          console.error('Error parsing token:', error)
         }
       }
     }
-  }, [activeTab, placeData]);
+  }, [activeTab, placeData])
 
   // ============================================================================
   // FUNCTION: handleSubmitReview - Submit a new review
   // ============================================================================
   const handleSubmitReview = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     if (!newReview.comment.trim()) {
-      alert("Please enter a comment");
-      return;
+      alert('Please enter a comment')
+      return
     }
 
-    setSubmitting(true);
+    setSubmitting(true)
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       if (!token) {
-        alert("Please login to submit a review");
-        navigate("/login");
-        return;
+        alert('Please login to submit a review')
+        navigate('/login')
+        return
       }
 
-      const locationId = placeData.xid || placeData.locationId || placeData.id;
+      const locationId = placeData.xid || placeData.locationId || placeData.id
 
       await axios.post(
-        "http://localhost:5000/api/reviews",
+        'http://localhost:5000/api/reviews',
         {
           locationId: locationId,
           locationName: placeData.name,
@@ -160,30 +167,35 @@ const DetailsPage = () => {
             Authorization: `Bearer ${token}`,
           },
         }
-      );
+      )
 
       // Reset form
-      setNewReview({ rating: 5, comment: "" });
+      setNewReview({ rating: 5, comment: '' })
 
       // Refresh reviews - load based on current state
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
-      fetchReviews(currentLimit);
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews
+      fetchReviews(currentLimit)
 
-      alert("Review submitted successfully!");
+      alert('Review submitted successfully!')
     } catch (error) {
-      console.error("Error submitting review:", error);
+      console.error('Error submitting review:', error)
       if (error.response?.status === 401) {
-        alert("Please login to submit a review");
-        navigate("/login");
+        alert('Please login to submit a review')
+        navigate('/login')
       } else if (error.response?.status === 400) {
-        alert(error.response.data.message || "Error submitting review");
+        alert(error.response.data.message || 'Error submitting review')
       } else {
-        alert("Failed to submit review. Please try again.");
+        alert('Failed to submit review. Please try again.')
       }
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   // ============================================================================
   // FUNCTION: handleLoadMore - Load more reviews with progressive loading
@@ -191,64 +203,67 @@ const DetailsPage = () => {
   const handleLoadMore = () => {
     if (loadMoreCount === 0) {
       // First click: show 2 + 3 = 5 reviews
-      fetchReviews(5);
-      setLoadMoreCount(1);
+      fetchReviews(5)
+      setLoadMoreCount(1)
     } else if (loadMoreCount === 1) {
       // Second click: show all reviews
-      fetchReviews(pagination.totalReviews);
-      setLoadMoreCount(2);
+      fetchReviews(pagination.totalReviews)
+      setLoadMoreCount(2)
     }
-  };
+  }
 
   // ============================================================================
   // FUNCTION: handleMarkHelpful - Increment helpful counter for a review
   // ============================================================================
   const handleMarkHelpful = async (reviewId) => {
     try {
-      await axios.post(
-        `http://localhost:5000/api/reviews/${reviewId}/helpful`
-      );
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
-      fetchReviews(currentLimit);
+      await axios.post(`http://localhost:5000/api/reviews/${reviewId}/helpful`)
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews
+      fetchReviews(currentLimit)
     } catch (error) {
-      console.error("Error marking helpful:", error);
+      console.error('Error marking helpful:', error)
     }
-  };
+  }
 
   // ============================================================================
   // FUNCTION: handleEditClick - Enter edit mode for a review
   // ============================================================================
   const handleEditClick = (review) => {
-    setEditingReviewId(review._id);
+    setEditingReviewId(review._id)
     setEditedReview({
       rating: review.rating,
       comment: review.comment,
-    });
-  };
+    })
+  }
 
   // ============================================================================
   // FUNCTION: handleCancelEdit - Cancel editing and return to view mode
   // ============================================================================
   const handleCancelEdit = () => {
-    setEditingReviewId(null);
-    setEditedReview({ rating: 5, comment: "" });
-  };
+    setEditingReviewId(null)
+    setEditedReview({ rating: 5, comment: '' })
+  }
 
   // ============================================================================
   // FUNCTION: handleUpdateReview - Save changes to an edited review
   // ============================================================================
   const handleUpdateReview = async (reviewId) => {
     if (!editedReview.comment.trim()) {
-      alert("Please enter a comment");
-      return;
+      alert('Please enter a comment')
+      return
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       if (!token) {
-        alert("Please login to update review");
-        navigate("/login");
-        return;
+        alert('Please login to update review')
+        navigate('/login')
+        return
       }
 
       await axios.put(
@@ -262,63 +277,73 @@ const DetailsPage = () => {
             Authorization: `Bearer ${token}`,
           },
         }
-      );
+      )
 
-      setEditingReviewId(null);
-      setEditedReview({ rating: 5, comment: "" });
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
-      fetchReviews(currentLimit);
-      alert("Review updated successfully!");
+      setEditingReviewId(null)
+      setEditedReview({ rating: 5, comment: '' })
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews
+      fetchReviews(currentLimit)
+      alert('Review updated successfully!')
     } catch (error) {
-      console.error("Error updating review:", error);
+      console.error('Error updating review:', error)
       if (error.response?.status === 401) {
-        alert("Please login to update review");
-        navigate("/login");
+        alert('Please login to update review')
+        navigate('/login')
       } else if (error.response?.status === 403) {
-        alert("You can only update your own reviews");
+        alert('You can only update your own reviews')
       } else {
-        alert("Failed to update review. Please try again.");
+        alert('Failed to update review. Please try again.')
       }
     }
-  };
+  }
 
   // ============================================================================
   // FUNCTION: handleDeleteReview - Delete a review
   // ============================================================================
   const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm("Are you sure you want to delete this review?")) {
-      return;
+    if (!window.confirm('Are you sure you want to delete this review?')) {
+      return
     }
 
     try {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       if (!token) {
-        alert("Please login to delete review");
-        navigate("/login");
-        return;
+        alert('Please login to delete review')
+        navigate('/login')
+        return
       }
 
       await axios.delete(`http://localhost:5000/api/reviews/${reviewId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
+      })
 
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
-      fetchReviews(currentLimit);
-      alert("Review deleted successfully!");
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews
+      fetchReviews(currentLimit)
+      alert('Review deleted successfully!')
     } catch (error) {
-      console.error("Error deleting review:", error);
+      console.error('Error deleting review:', error)
       if (error.response?.status === 401) {
-        alert("Please login to delete review");
-        navigate("/login");
+        alert('Please login to delete review')
+        navigate('/login')
       } else if (error.response?.status === 403) {
-        alert("You can only delete your own reviews");
+        alert('You can only delete your own reviews')
       } else {
-        alert("Failed to delete review. Please try again.");
+        alert('Failed to delete review. Please try again.')
       }
     }
-  };
+  }
 
   // ============================================================================
   // FUNCTION: renderStars - Display star rating (static or interactive)
@@ -330,34 +355,34 @@ const DetailsPage = () => {
           <Star
             key={star}
             onClick={() => interactive && onChange && onChange(star)}
-            className={`w-${interactive ? "6" : "4"} h-${
-              interactive ? "6" : "4"
+            className={`w-${interactive ? '6' : '4'} h-${
+              interactive ? '6' : '4'
             } ${
               star <= rating
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-300'
             } ${
               interactive
-                ? "cursor-pointer hover:scale-110 transition-transform"
-                : ""
+                ? 'cursor-pointer hover:scale-110 transition-transform'
+                : ''
             }`}
           />
         ))}
       </div>
-    );
-  };
+    )
+  }
 
   // ============================================================================
   // FUNCTION: formatDate - Format ISO date string to readable format
   // ============================================================================
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+  }
 
   // ============================================================================
   // LOADING STATE
@@ -367,7 +392,7 @@ const DetailsPage = () => {
       <div className="flex justify-center items-center min-h-screen">
         <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-teal-500 border-t-transparent"></div>
       </div>
-    );
+    )
   }
 
   // ============================================================================
@@ -378,13 +403,13 @@ const DetailsPage = () => {
       <div className="flex flex-col justify-center items-center min-h-screen">
         <div className="text-xl text-red-500 mb-4">No data found</div>
         <button
-          onClick={() => navigate("/booking")}
+          onClick={() => navigate('/booking')}
           className="bg-teal-500 text-white px-6 py-3 rounded-lg hover:bg-teal-600 transition"
         >
           Go Back to Booking
         </button>
       </div>
-    );
+    )
   }
 
   // ============================================================================
@@ -427,7 +452,7 @@ const DetailsPage = () => {
           {/* Title Section */}
           <div>
             <p className="text-sm text-gray-600 mb-2">
-              {placeData.categoryLabel || "Location"}
+              {placeData.categoryLabel || 'Location'}
             </p>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">
               {placeData.name}
@@ -437,21 +462,21 @@ const DetailsPage = () => {
             <div className="border-b border-gray-200 mb-6">
               <div className="flex gap-8">
                 <button
-                  onClick={() => setActiveTab("details")}
+                  onClick={() => setActiveTab('details')}
                   className={`pb-3 px-1 font-medium transition-all ${
-                    activeTab === "details"
-                      ? "border-b-2 border-teal-500 text-teal-600"
-                      : "text-gray-600 hover:text-gray-900"
+                    activeTab === 'details'
+                      ? 'border-b-2 border-teal-500 text-teal-600'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   Location Details
                 </button>
                 <button
-                  onClick={() => setActiveTab("reviews")}
+                  onClick={() => setActiveTab('reviews')}
                   className={`pb-3 px-1 font-medium transition-all ${
-                    activeTab === "reviews"
-                      ? "border-b-2 border-teal-500 text-teal-600"
-                      : "text-gray-600 hover:text-gray-900"
+                    activeTab === 'reviews'
+                      ? 'border-b-2 border-teal-500 text-teal-600'
+                      : 'text-gray-600 hover:text-gray-900'
                   }`}
                 >
                   Reviews ({pagination.totalReviews})
@@ -461,7 +486,7 @@ const DetailsPage = () => {
           </div>
 
           {/* DETAILS TAB */}
-          {activeTab === "details" && (
+          {activeTab === 'details' && (
             <div className="space-y-8">
               {/* Description */}
               <div>
@@ -470,7 +495,7 @@ const DetailsPage = () => {
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-4">
                   {placeData.description ||
-                    "Discover this amazing location with unique features and attractions."}
+                    'Discover this amazing location with unique features and attractions.'}
                 </p>
 
                 {/* Bullet points */}
@@ -499,12 +524,12 @@ const DetailsPage = () => {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {[
-                    { icon: "🏠", text: "Spacious area" },
-                    { icon: "📍", text: "Strategic location" },
-                    { icon: "💡", text: "Natural Lighting" },
-                    { icon: "🧹", text: "Cleaning Service" },
-                    { icon: "🐾", text: "Pet Friendly" },
-                    { icon: "🍽️", text: "Food Services" },
+                    { icon: '🏠', text: 'Spacious area' },
+                    { icon: '📍', text: 'Strategic location' },
+                    { icon: '💡', text: 'Natural Lighting' },
+                    { icon: '🧹', text: 'Cleaning Service' },
+                    { icon: '🐾', text: 'Pet Friendly' },
+                    { icon: '🍽️', text: 'Food Services' },
                   ].map((amenity, idx) => (
                     <div
                       key={idx}
@@ -526,11 +551,11 @@ const DetailsPage = () => {
                   {placeData.location ? (
                     <>
                       <p className="text-gray-700 mb-2">
-                        <span className="font-semibold">Latitude:</span>{" "}
+                        <span className="font-semibold">Latitude:</span>{' '}
                         {placeData.location.lat}
                       </p>
                       <p className="text-gray-700">
-                        <span className="font-semibold">Longitude:</span>{" "}
+                        <span className="font-semibold">Longitude:</span>{' '}
                         {placeData.location.lon}
                       </p>
                     </>
@@ -545,7 +570,7 @@ const DetailsPage = () => {
           )}
 
           {/* REVIEWS TAB */}
-          {activeTab === "reviews" && (
+          {activeTab === 'reviews' && (
             <div className="space-y-8">
               {/* Average Rating */}
               <div className="bg-white p-6 rounded-lg border border-gray-200">
@@ -561,8 +586,8 @@ const DetailsPage = () => {
                             key={star}
                             className={`w-5 h-5 ${
                               star <= Math.round(averageRating)
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'text-gray-300'
                             }`}
                           />
                         ))}
@@ -615,7 +640,7 @@ const DetailsPage = () => {
                     disabled={submitting}
                     className="w-full bg-teal-500 text-white py-3 rounded-lg hover:bg-teal-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors font-medium"
                   >
-                    {submitting ? "Submitting..." : "Submit Review"}
+                    {submitting ? 'Submitting...' : 'Submit Review'}
                   </button>
                 </form>
               </div>
@@ -701,7 +726,7 @@ const DetailsPage = () => {
                             <div className="flex justify-between items-start mb-3">
                               <div>
                                 <h4 className="font-bold text-gray-900">
-                                  {review.userId?.name || "Anonymous"}
+                                  {review.userId?.name || 'Anonymous'}
                                 </h4>
                                 <p className="text-sm text-gray-500">
                                   {formatDate(review.createdAt)}
@@ -767,8 +792,8 @@ const DetailsPage = () => {
                           >
                             <ChevronLeft className="w-5 h-5 rotate-[-90deg]" />
                             {loadMoreCount === 0
-                              ? "See More (3 reviews)"
-                              : "See All Reviews"}
+                              ? 'See More (3 reviews)'
+                              : 'See All Reviews'}
                           </button>
                         </div>
                       )}
@@ -777,7 +802,7 @@ const DetailsPage = () => {
                     {reviews.length > 0 && (
                       <div className="text-center mt-4">
                         <p className="text-sm text-gray-500">
-                          Showing {reviews.length} of {pagination.totalReviews}{" "}
+                          Showing {reviews.length} of {pagination.totalReviews}{' '}
                           reviews
                         </p>
                       </div>
@@ -798,7 +823,7 @@ const DetailsPage = () => {
           {/* Bottom Back Button */}
           <div className="mt-8 pt-8 border-t border-gray-200">
             <button
-              onClick={() => navigate("/booking")}
+              onClick={() => navigate('/booking')}
               className="w-full bg-teal-500 text-white px-8 py-3 rounded-lg hover:bg-teal-600 transition font-semibold shadow-md hover:shadow-lg"
             >
               ← Back to Booking Page
@@ -807,7 +832,7 @@ const DetailsPage = () => {
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default DetailsPage;
+export default DetailsPage

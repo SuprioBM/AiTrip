@@ -25,6 +25,12 @@ export default function LoginPage() {
   const [fpMsg, setFpMsg] = useState('')
   const [fpLoading, setFpLoading] = useState(false)
 
+  // NOTE: Forgot password is a 3-step UI flow that relies on backend support:
+  // 1) POST /auth/forgot-password { email } -> backend should email a verification code (or return a success)
+  // 2) POST /auth/verify-reset-code { email, code } -> backend verifies the code
+  // 3) POST /auth/reset-password { email, code, newPassword } -> backend updates the password
+  // If any backend step is missing, the UI will surface the returned error via `fpMsg`.
+
   // TODO: fix the color contrast issues in dark mode
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -63,7 +69,9 @@ export default function LoginPage() {
     setFpLoading(true)
     setFpMsg('')
     try {
-      // Backend should send a verification code to the email if it exists
+      // Backend should send a verification code to the email if it exists.
+      // Note: some backends will always return success (to avoid email harvesting);
+      // check backend docs if you see unexpected behavior.
       await API.post('/auth/forgot-password', { email: forgotEmail })
       setForgotStage('verify')
       setFpMsg('Verification code sent. Check your email.')
@@ -83,6 +91,7 @@ export default function LoginPage() {
     setFpLoading(true)
     setFpMsg('')
     try {
+      // Verify the code with backend. Backend must provide this endpoint.
       await API.post('/auth/verify-reset-code', {
         email: forgotEmail,
         code: verificationCode,
@@ -109,6 +118,7 @@ export default function LoginPage() {
     setFpLoading(true)
     setFpMsg('')
     try {
+      // Finalize reset: backend must accept email + code + newPassword and update the account.
       await API.post('/auth/reset-password', {
         email: forgotEmail,
         code: verificationCode,
