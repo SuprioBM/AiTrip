@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 
+// Review model: stores user reviews for locations and minimal metadata
 const reviewSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -46,7 +47,7 @@ const reviewSchema = new mongoose.Schema({
   },
 });
 
-// index for efficient querying
+// Compound index for efficient location-based queries (newest first)
 reviewSchema.index({ locationId: 1, createdAt: -1 });
 
 export default mongoose.model("Review", reviewSchema);
