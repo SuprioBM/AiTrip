@@ -2,7 +2,7 @@ import Review from "../models/Review.js";
 import User from "../models/User.js";
 
 /**
- * Create a new review for a location
+ * Creating a new review for a location
  * Allows multiple reviews per user
  */
 export const createReview = async (req, res, next) => {
@@ -16,7 +16,7 @@ export const createReview = async (req, res, next) => {
       });
     }
 
-    // Create review with user ID from auth middleware
+    // Creating review with user ID from auth middleware
     const review = await Review.create({
       userId: req.user._id,
       locationId,
@@ -59,7 +59,7 @@ export const getLocationReviews = async (req, res, next) => {
       .skip(skip)
       .limit(limit);
 
-    // Calculate average rating using aggregation
+    // Calculating average rating using aggregation
     const ratingStats = await Review.aggregate([
       { $match: { locationId } },
       {

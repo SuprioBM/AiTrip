@@ -12,19 +12,19 @@ import {
 
 const router = express.Router();
 
-// Create a new review (requires authentication)
+// Creates a new review (requires authentication)
 router.post("/", protect, createReview);
 
-// Get reviews with pagination for a location
+// Gets reviews with pagination for a location
 router.get("/location/:locationId", getLocationReviews);
 
-// Update a review (requires authentication)
+// Updates a review (requires authentication)
 router.put("/:reviewId", protect, updateReview);
 
-// Delete a review (requires authentication)
+// Deletes a review (requires authentication)
 router.delete("/:reviewId", protect, deleteReview);
 
-// Mark review as helpful (public)
+// Marks review as helpful (public)
 router.post("/:reviewId/helpful", markHelpful);
 
 // Admin: Get all reviews with filters

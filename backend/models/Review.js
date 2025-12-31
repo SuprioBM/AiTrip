@@ -46,7 +46,7 @@ const reviewSchema = new mongoose.Schema({
   },
 });
 
-// Index for efficient querying
+// index for efficient querying
 reviewSchema.index({ locationId: 1, createdAt: -1 });
 
 export default mongoose.model("Review", reviewSchema);

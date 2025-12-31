@@ -14,14 +14,14 @@ const ReviewPage = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // Get the place data from URL
+        // Get the data from URL
         const encodedData = searchParams.get("data");
         if (encodedData) {
           const decodedData = decodeURIComponent(encodedData);
           const parsedData = JSON.parse(decodedData);
           setPlaceData(parsedData);
 
-          // Fetch reviews from backend
+          // Fetch reviews based on location ID
           const locationId = parsedData.locationId || parsedData.id;
           if (locationId) {
             const response = await axios.get(
@@ -29,7 +29,7 @@ const ReviewPage = () => {
             );
             setReviews(response.data);
 
-            // Calculate average rating
+            // Calculate the average rating
             if (response.data.length > 0) {
               const avg =
                 response.data.reduce((sum, review) => sum + review.rating, 0) /
@@ -94,7 +94,7 @@ const ReviewPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Back Button */}
+        {/* Back  Button */}
         <button
           onClick={handleGoBack}
           className="mb-6 flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors group"
@@ -103,7 +103,7 @@ const ReviewPage = () => {
           <span className="font-semibold">Back to Details</span>
         </button>
 
-        {/* Header */}
+        {/*Header*/}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           {placeData && (
             <div>
@@ -127,7 +127,7 @@ const ReviewPage = () => {
           </div>
         </div>
 
-        {/* Reviews List */}
+        {/*Reviews List*/}
         <div className="space-y-4">
           {reviews.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -159,7 +159,7 @@ const ReviewPage = () => {
                   <div>{renderStars(review.rating)}</div>
                 </div>
 
-                {/* Review Content */}
+                {/*Review Content*/}
                 <div className="mb-4">
                   <p className="text-gray-700 leading-relaxed">
                     {review.comment}
