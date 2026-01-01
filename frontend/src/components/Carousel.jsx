@@ -49,7 +49,7 @@ export default function Carousel({ destinations, currentIndex, setCurrentIndex }
 		<div className="flex flex-col items-center w-full min-h-[300px] sm:min-h-[400px] justify-end">
 			{/* Cards Container */}
 			<div 
-				className="flex gap-2 sm:gap-3 md:gap-4 lg:gap-6 justify-center mb-3 sm:mb-4 md:mb-6 px-2 sm:px-4"
+				className="flex gap-2 sm:gap-3 md:gap-4 lg:gap-6 justify-center mb-3 sm:mb-4 md:mb-6 px-2 sm:px-4 pl-17"
 				onTouchStart={onTouchStart}
 				onTouchMove={onTouchMove}
 				onTouchEnd={onTouchEnd}

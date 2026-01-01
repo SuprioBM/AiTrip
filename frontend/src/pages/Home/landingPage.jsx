@@ -1,12 +1,98 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import {
-  ChatBubbleLeftEllipsisIcon,
-  StarIcon,
-  QuestionMarkCircleIcon,
-} from "@heroicons/react/24/solid";
+import { useState, useEffect, useRef } from "react";
+import { StarIcon, QuestionMarkCircleIcon } from "@heroicons/react/24/solid";
 
 export default function LandingPage() {
+  const items = [
+    {
+      color: "#34D399",
+      image: "/santorini-greece-sunset.jpg",
+      description:
+        "Iconic white buildings, blue domes, and breathtaking sunsets in Santorini, Greece.",
+    },
+    {
+      color: "#60A5FA",
+      image: "/broken-beach-bali.jpg",
+      description:
+        "Lush rice terraces, rich culture, and beautiful beaches in Bali, Indonesia.",
+    },
+    {
+      color: "#C4B5FD",
+      image: "/kerala-backwaters-india.jpg",
+      description:
+        "Peaceful houseboat journeys through Kerala's scenic backwaters.",
+    },
+    {
+      color: "#FDE047",
+      image: "/maldives-islands-resort.jpg",
+      description:
+        "Crystal-clear waters, coral reefs, and overwater resorts in the Maldives.",
+    },
+    {
+      color: "#F87171",
+      image: "/buddhist-temple-thailand.jpg",
+      description:
+        "Ancient temples and tranquil landscapes shaped by Buddhist traditions in Thailand.",
+    },
+  ];
+
+  const tes = [
+    {
+      name: "Ayesha Rahman",
+      testimonial:
+        "This platform made planning my trip effortless. The recommendations were spot-on and saved me so much time.",
+    },
+    {
+      name: "Daniel Carter",
+      testimonial:
+        "A beautifully designed experience with genuinely helpful travel insights. I discovered places I would have otherwise missed.",
+    },
+    {
+      name: "Nusrat Jahan",
+      testimonial:
+        "From destinations to hotels, everything felt thoughtfully curated. It turned my vacation into a stress-free adventure.",
+    },
+  ];
+
+  const [mobileIndex, setMobileIndex] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+  const touchStartRef = useRef(null);
+  const touchEndRef = useRef(null);
+  const autoplayRef = useRef(null);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    autoplayRef.current = setInterval(() => {
+      setMobileIndex((s) => (s + 1) % items.length);
+    }, 5000);
+    return () => clearInterval(autoplayRef.current);
+  }, [isMobile]);
+
+  const onTouchStartMobile = (e) => {
+    touchStartRef.current = e.targetTouches[0].clientX;
+    touchEndRef.current = null;
+  };
+  const onTouchMoveMobile = (e) => {
+    touchEndRef.current = e.targetTouches[0].clientX;
+  };
+  const onTouchEndMobile = () => {
+    const start = touchStartRef.current;
+    const end = touchEndRef.current;
+    if (start == null || end == null) return;
+    const dist = start - end;
+    const threshold = 50;
+    if (dist > threshold) setMobileIndex((s) => (s + 1) % items.length);
+    if (dist < -threshold)
+      setMobileIndex((s) => (s - 1 + items.length) % items.length);
+  };
   return (
     <div className="min-h-screen bg-white text-[#1F2937]">
       {/* BENTO CARD ROW */}
@@ -19,42 +105,57 @@ export default function LandingPage() {
       >
         Your Next Adventure Awaits
       </motion.h1>
-      <section className="px-30 py-15 flex justify-evenly gap-6" id="destinations">
-        {[
-          { color: "#34D399", image: "/santorini-greece-sunset.jpg" },
-          { color: "#60A5FA", image: "/broken-beach-bali.jpg" },
-          { color: "#C4B5FD", image: "/kerala-backwaters-india.jpg" },
-          { color: "#FDE047", image: "/maldives-islands-resort.jpg" },
-          { color: "#F87171", image: "/buddhist-temple-thailand.jpg" },
-        ].map((item, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={{
-              duration: 0.6,
-              delay: i * 0.1,
-              ease: "easeOut",
-            }}
-            whileHover={{ y: -8, scale: 1.03 }}
-            className={`w-64 h-96 rounded-2xl shadow-md overflow-hidden relative ${
-              i === 1 ? "mt-13" : i === 3 ? "mt-13" : ""
-            }`}
+      <section className="px-6 py-10 max-w-7xl mx-auto" id="destinations">
+        {isMobile ? (
+          <div
+            className="w-full h-[360px] sm:h-[420px] relative rounded-2xl overflow-hidden mx-auto"
+            onTouchStart={onTouchStartMobile}
+            onTouchMove={onTouchMoveMobile}
+            onTouchEnd={onTouchEndMobile}
           >
-            <img
-              src={item.image}
-              alt={`Feature ${i + 1}`}
+            <motion.img
+              key={mobileIndex}
+              src={items[mobileIndex].image}
+              alt={`Feature ${mobileIndex + 1}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
               className="w-full h-full object-cover absolute inset-0"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-6 flex flex-col justify-end text-white">
-              <div className="text-xl font-semibold">Feature {i + 1}</div>
-              <p className="text-sm opacity-90">
-                Explore unique travel experiences designed for you.
-              </p>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-6 flex flex-col justify-end text-white/80 leading-relaxed text-sm font-light text-center">
+              <div className="text-xl">{items[mobileIndex].description}</div>
             </div>
-          </motion.div>
-        ))}
+          </div>
+        ) : (
+          <div className="flex flex-col md:flex-row md:justify-evenly gap-6 items-center">
+            {items.map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
+                whileHover={{ y: -8, scale: 1.03 }}
+                className={`w-full sm:w-80 md:w-64 h-72 sm:h-96 rounded-2xl shadow-md overflow-hidden relative ${
+                  i === 1 || i === 3 ? "md:mt-12" : ""
+                } mx-auto`}
+              >
+                <img
+                  src={item.image}
+                  alt={`Feature ${i + 1}`}
+                  className="w-full h-full object-cover absolute inset-0"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-6 flex flex-col justify-end text-white">
+                  <div className="text-xl font-semibold">Feature {i + 1}</div>
+                  <p className="text-sm opacity-90">
+                    Explore unique travel experiences designed for you.
+                  </p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* DEFINITION SECTION */}
@@ -170,9 +271,9 @@ export default function LandingPage() {
         <h2 className="text-2xl font-bold mb-6">Testimonials</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[1, 2, 3].map((i) => (
+          {tes.map((j, idx) => (
             <motion.div
-              key={i}
+              key={j.name ?? idx}
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
@@ -191,12 +292,10 @@ export default function LandingPage() {
                   <div className="bg-gradient-to-br from-yellow-400 to-orange-400 p-2 rounded-full">
                     <StarIcon className="h-6 w-6 text-white" />
                   </div>
-                  <h4 className="text-xl font-semibold">User {i}</h4>
+                  <h4 className="text-xl font-semibold">{j.name}</h4>
                 </div>
                 <p className="text-gray-700 text-base leading-relaxed">
-                  "This service made my trip amazing! Highly recommended. The
-                  experience was unforgettable and exceeded all my
-                  expectations."
+                  {j.testimonial}
                 </p>
               </div>
             </motion.div>
