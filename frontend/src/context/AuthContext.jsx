@@ -23,6 +23,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     logoutFromStorage();
+    sessionStorage.clear();
     setUser(null);
     await supabase.auth.signOut(); // Logout Supabase OAuth users
   };

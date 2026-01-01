@@ -12,6 +12,7 @@ import {
   Check,
 } from "lucide-react";
 import API from "../api";
+import { toast } from "sonner";
 
 const DetailsPage = () => {
   // ============================================================================
@@ -129,7 +130,7 @@ const DetailsPage = () => {
     e.preventDefault();
 
     if (!newReview.comment.trim()) {
-      alert("Please enter a comment");
+      toast.error("Please enter a comment");
       return;
     }
 
@@ -137,7 +138,7 @@ const DetailsPage = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to submit a review");
+        toast.error("Please login to submit a review");
         navigate("/login");
         return;
       }
@@ -163,16 +164,16 @@ const DetailsPage = () => {
           : pagination.totalReviews;
       fetchReviews(currentLimit);
 
-      alert("Review submitted successfully!");
+      toast.success("Review submitted successfully!");
     } catch (error) {
       console.error("Error submitting review:", error);
       if (error.response?.status === 401) {
-        alert("Please login to submit a review");
+        toast.error("Please login to submit a review");
         navigate("/login");
       } else if (error.response?.status === 400) {
-        alert(error.response.data.message || "Error submitting review");
+        toast.error(error.response.data.message || "Error submitting review");
       } else {
-        alert("Failed to submit review. Please try again.");
+        toast.error("Failed to submit review. Please try again.");
       }
     } finally {
       setSubmitting(false);
@@ -236,14 +237,14 @@ const DetailsPage = () => {
   // ============================================================================
   const handleUpdateReview = async (reviewId) => {
     if (!editedReview.comment.trim()) {
-      alert("Please enter a comment");
+      toast.error("Please enter a comment");
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to update review");
+        toast.error("Please login to update review");
         navigate("/login");
         return;
       }
@@ -262,16 +263,16 @@ const DetailsPage = () => {
           ? 5
           : pagination.totalReviews;
       fetchReviews(currentLimit);
-      alert("Review updated successfully!");
+      toast.success("Review updated successfully!");
     } catch (error) {
       console.error("Error updating review:", error);
       if (error.response?.status === 401) {
-        alert("Please login to update review");
+        toast.error("Please login to update review");
         navigate("/login");
       } else if (error.response?.status === 403) {
-        alert("You can only update your own reviews");
+        toast.error("You can only update your own reviews");
       } else {
-        alert("Failed to update review. Please try again.");
+        toast.error("Failed to update review. Please try again.");
       }
     }
   };
@@ -287,7 +288,7 @@ const DetailsPage = () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to delete review");
+        toast.error("Please login to delete review");
         navigate("/login");
         return;
       }
@@ -301,16 +302,16 @@ const DetailsPage = () => {
           ? 5
           : pagination.totalReviews;
       fetchReviews(currentLimit);
-      alert("Review deleted successfully!");
+      toast.success("Review deleted successfully!");
     } catch (error) {
       console.error("Error deleting review:", error);
       if (error.response?.status === 401) {
-        alert("Please login to delete review");
+        toast.error("Please login to delete review");
         navigate("/login");
       } else if (error.response?.status === 403) {
-        alert("You can only delete your own reviews");
+        toast.error("You can only delete your own reviews");
       } else {
-        alert("Failed to delete review. Please try again.");
+        toast.error("Failed to delete review. Please try again.");
       }
     }
   };

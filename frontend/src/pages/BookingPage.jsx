@@ -3,15 +3,8 @@ import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import MapComponent from "../components/MapComponent";
 import API from "../api";
-import {
-  Plus,
-  X,
-  Users,
-  Calendar,
-  DollarSign,
-  Clock,
-  
-} from "lucide-react";
+import { toast } from "sonner";
+import { Plus, X, Users, Calendar, DollarSign, Clock } from "lucide-react";
 
 // Check for refresh BEFORE component renders
 const checkAndClearOnRefresh = () => {
@@ -37,7 +30,7 @@ const wasPageRefreshed = checkAndClearOnRefresh();
 export default function BookingPage() {
   const { user } = useAuth();
   console.log(user);
-  
+
   // Initialize from sessionStorage (will be empty if refreshed)
   const [formData, setFormData] = useState(() => {
     try {
@@ -111,13 +104,12 @@ export default function BookingPage() {
 
   // Additional trip details
   const [tripDetails, setTripDetails] = useState({
-    startDate: '',
-    endDate: '',
+    startDate: "",
+    endDate: "",
     numberOfDays: 0,
     budget: 0,
   });
   const [savingTrip, setSavingTrip] = useState(false);
-  
 
   const searchPartners = async (lat, lon) => {
     // Search partner-ups by coordinates (preferred) or by selectedLocation
@@ -175,7 +167,7 @@ export default function BookingPage() {
   useEffect(() => {
     if (tripDetails.startDate && tripDetails.endDate) {
       const days = calculateDays(tripDetails.startDate, tripDetails.endDate);
-      setTripDetails(prev => ({ ...prev, numberOfDays: days }));
+      setTripDetails((prev) => ({ ...prev, numberOfDays: days }));
     }
   }, [tripDetails.startDate, tripDetails.endDate]);
 
@@ -192,21 +184,24 @@ export default function BookingPage() {
   // Assign localhost to trip
   const handleAssignLocalhost = async (host) => {
     if (!user) {
-      alert('Please login to assign localhost');
+      toast.error("Please login to assign localhost");
       return;
     }
 
     if (!selectedLocation) {
-      alert('Please select a location first');
+      toast.error("Please select a location first");
       return;
     }
 
     setSavingTrip(true);
     try {
       // Create unique placeId combining location and localhost
-      const locationCode = selectedLocation.name.substring(0, 4).toLowerCase().replace(/\s/g, '');
+      const locationCode = selectedLocation.name
+        .substring(0, 4)
+        .toLowerCase()
+        .replace(/\s/g, "");
       const uniquePlaceId = `${locationCode}_${host._id}_${Date.now()}`;
-      
+
       const tripData = {
         locationName: selectedLocation.name,
         placeId: uniquePlaceId,
@@ -216,22 +211,26 @@ export default function BookingPage() {
         localhostName: host.name,
       };
 
-      console.log('Assigning localhost to trip:', tripData);
-      const { data } = await API.post('/trips', tripData);
-      console.log('Response:', data);
-      
+      console.log("Assigning localhost to trip:", tripData);
+      const { data } = await API.post("/trips", tripData);
+      console.log("Response:", data);
+
       if (data.trip) {
-        alert(`Localhost "${host.name}" assigned to your trip successfully! View it in your dashboard.`);
+        toast.success(
+          `Localhost "${host.name}" assigned to your trip successfully! View it in your dashboard.`
+        );
       }
     } catch (error) {
-      console.error('Error assigning localhost:', error);
-      console.error('Error response:', error.response?.data);
+      console.error("Error assigning localhost:", error);
+      console.error("Error response:", error.response?.data);
       const errorMsg = error.response?.data?.message || error.message;
-      
-      if (errorMsg.includes('duplicate') || errorMsg.includes('unique')) {
-        alert('You have already created a trip for this location with this localhost. Check your dashboard.');
+
+      if (errorMsg.includes("duplicate") || errorMsg.includes("unique")) {
+        toast.error(
+          "You have already created a trip for this location with this localhost. Check your dashboard."
+        );
       } else {
-        alert(`Failed to assign localhost: ${errorMsg}`);
+        toast.error(`Failed to assign localhost: ${errorMsg}`);
       }
     } finally {
       setSavingTrip(false);
@@ -247,16 +246,16 @@ export default function BookingPage() {
       // Extract first 3 letters of location name
       const locationCode = selectedLocation.name
         ? selectedLocation.name.toLowerCase().substring(0, 3)
-        : 'unk';
+        : "unk";
 
-      console.log('🔍 Fetching localhosts for location code:', locationCode);
+      console.log("🔍 Fetching localhosts for location code:", locationCode);
 
       const { data } = await API.get(`/hosts/${locationCode}`);
-      
-      console.log('✅ Localhosts fetched:', data);
+
+      console.log("✅ Localhosts fetched:", data);
       setLocalhosts(data.data || []);
     } catch (error) {
-      console.error('Error fetching localhosts:', error);
+      console.error("Error fetching localhosts:", error);
       setLocalhosts([]);
     } finally {
       setLoadingLocalhosts(false);
@@ -389,7 +388,7 @@ export default function BookingPage() {
       }
     } catch (error) {
       console.error("AI suggestion error:", error);
-      alert("Failed to get suggestions. Please try again.");
+      toast.error("Failed to get suggestions. Please try again.");
     } finally {
       setLoadingAI(false);
     }
@@ -437,7 +436,7 @@ export default function BookingPage() {
     e.preventDefault();
 
     if (!selectedLocation) {
-      alert("Please search for a location first");
+      toast.error("Please search for a location first");
       return;
     }
 
@@ -471,13 +470,15 @@ export default function BookingPage() {
       if (data.success) {
         setMyPartnerUp(data.data);
         setShowPartnerUpForm(false);
-        alert("PartnerUp created successfully!");
+        toast.success("PartnerUp created successfully!");
         // Search for matching partners
         searchPartners();
       }
     } catch (error) {
       console.error("Error creating PartnerUp:", error);
-      alert(error.response?.data?.message || "Failed to create PartnerUp");
+      toast.error(
+        error.response?.data?.message || "Failed to create PartnerUp"
+      );
     }
   };
 
@@ -489,10 +490,15 @@ export default function BookingPage() {
       const token = localStorage.getItem("token");
 
       const payload = {
-        placeName: (partner && partner.placeName) || (selectedLocation && selectedLocation.name),
+        placeName:
+          (partner && partner.placeName) ||
+          (selectedLocation && selectedLocation.name),
         location:
           (partner && partner.location) ||
-          (selectedLocation && { lat: selectedLocation.lat, lon: selectedLocation.lng }),
+          (selectedLocation && {
+            lat: selectedLocation.lat,
+            lon: selectedLocation.lng,
+          }),
       };
 
       const { data } = await API.post(
@@ -506,11 +512,11 @@ export default function BookingPage() {
       );
 
       if (data && data.success) {
-        alert("Partner request sent successfully!");
+        toast.success("Partner request sent successfully!");
       }
     } catch (error) {
       console.error("Error sending partner request:", error);
-      alert(error.response?.data?.message || "Failed to send request");
+      toast.error(error.response?.data?.message || "Failed to send request");
     }
   };
 
@@ -528,8 +534,6 @@ export default function BookingPage() {
       searchPartners();
     }
   }, [formData.travelDate]);
-
-  
 
   return (
     <div className="min-h-screen bg-white py-23 px-4">
@@ -789,13 +793,21 @@ export default function BookingPage() {
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900">{host.name}</h4>
-                              <p className="text-sm text-gray-600">{host.locationName}</p>
+                              <h4 className="font-semibold text-gray-900">
+                                {host.name}
+                              </h4>
+                              <p className="text-sm text-gray-600">
+                                {host.locationName}
+                              </p>
                               {host.email && (
-                                <p className="text-xs text-gray-500 mt-2">📧 {host.email}</p>
+                                <p className="text-xs text-gray-500 mt-2">
+                                  📧 {host.email}
+                                </p>
                               )}
                               {host.phone && (
-                                <p className="text-xs text-gray-500">📱 {host.phone}</p>
+                                <p className="text-xs text-gray-500">
+                                  📱 {host.phone}
+                                </p>
                               )}
                             </div>
                             <button
@@ -813,8 +825,8 @@ export default function BookingPage() {
                   ) : (
                     <div className="text-center py-4 text-gray-500 text-sm">
                       {selectedLocation
-                        ? 'No local hosts available for this location yet'
-                        : 'Search for a location to find local hosts'}
+                        ? "No local hosts available for this location yet"
+                        : "Search for a location to find local hosts"}
                     </div>
                   )}
                 </div>

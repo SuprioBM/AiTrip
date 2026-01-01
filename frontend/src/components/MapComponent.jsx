@@ -5,6 +5,7 @@ import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import "leaflet-routing-machine";
 import { useAuth } from "../context/AuthContext";
 import API from "../api";
+import { toast } from "sonner";
 
 // Fix for default marker icons in Leaflet
 delete L.Icon.Default.prototype._getIconUrl;
@@ -94,12 +95,6 @@ export default function MapComponent({ center, markers = [], userData = {} }) {
   const routeLayerRef = useRef(null);
   const { user } = useAuth();
 
-  
-
-  
-  
-  
-
   const [userLocation, setUserLocation] = useState(null);
   const [loadingLocation, setLoadingLocation] = useState(false);
   const [selectedDestination, setSelectedDestination] = useState(null);
@@ -164,76 +159,73 @@ export default function MapComponent({ center, markers = [], userData = {} }) {
   };
 
   // Save trip to backend
-const saveTrip = async () => {
-  if (selectedPlaces.length === 0) {
-    alert("Please select at least one place to save your trip!");
-    return;
-  }
+  const saveTrip = async () => {
+    if (selectedPlaces.length === 0) {
+      toast.error("Please select at least one place to save your trip!");
+      return;
+    }
 
-  // Check if user is logged in
-  if (!user || !user.id) {
-    alert("Please login to save your trip!");
-    return;
-  }
+    // Check if user is logged in
+    if (!user || !user.id) {
+      toast.error("Please login to save your trip!");
+      return;
+    }
 
-  setSavingTrip(true);
+    setSavingTrip(true);
 
-  try {
-    // Format selectedPins according to backend schema
-    const formattedPins = selectedPlaces.map((place) => ({
-      category: place.category,
-      name: place.name,
-      location: {
-        lat: place.location.lat,
-        lon: place.location.lon,
-      },
-      photos: place.photos || [],
-      shortDescription: place.description || "",
-      wikipediaUrl: place.wikipediaUrl || null,
-    }));
+    try {
+      // Format selectedPins according to backend schema
+      const formattedPins = selectedPlaces.map((place) => ({
+        category: place.category,
+        name: place.name,
+        location: {
+          lat: place.location.lat,
+          lon: place.location.lon,
+        },
+        photos: place.photos || [],
+        shortDescription: place.description || "",
+        wikipediaUrl: place.wikipediaUrl || null,
+      }));
 
-    // Extract location name from first place or use a default
-    const locationName = center.name || "My Trip";
+      // Extract location name from first place or use a default
+      const locationName = center.name || "My Trip";
 
-    // Generate placeId
-    const placeId = generatePlaceId(selectedPlaces);
+      // Generate placeId
+      const placeId = generatePlaceId(selectedPlaces);
 
-    // Prepare trip data
-    const tripData = {
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-      locationName,
-      placeId,
-      selectedPins: formattedPins,
-    };
+      // Prepare trip data
+      const tripData = {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+        locationName,
+        placeId,
+        selectedPins: formattedPins,
+      };
 
+      // ✅ Use your API instance instead of fetch
+      const response = await API.post("/trip", tripData);
 
-    // ✅ Use your API instance instead of fetch
-    const response = await API.post("/trip", tripData);
+      toast.success(
+        `✅ Trip saved successfully!\n\n` +
+          `📍 Location: ${response.data.trip.locationName}\n` +
+          `📌 Places: ${response.data.trip.selectedPins.length}\n` +
+          `🆔 Trip ID: ${response.data.trip._id}`
+      );
+      setSelectedPlaces([]);
+    } catch (error) {
+      console.error("Error saving trip:", error);
 
-
-
-    alert(
-      `✅ Trip saved successfully!\n\n` +
-        `📍 Location: ${response.data.trip.locationName}\n` +
-        `📌 Places: ${response.data.trip.selectedPins.length}\n` +
-        `🆔 Trip ID: ${response.data.trip._id}`
-    );
-    setSelectedPlaces([]);
-  } catch (error) {
-    console.error("Error saving trip:", error);
-
-    // Axios error handling
-    const errorMessage =
-      error.response?.data?.message || error.message || "Failed to save trip";
-    alert(`❌ Failed to save trip: ${errorMessage}`);
-  } finally {
-    setSavingTrip(false);
-  }
-};
+      // Axios error handling
+      const errorMessage =
+        error.response?.data?.message || error.message || "Failed to save trip";
+      toast.error(`❌ Failed to save trip: ${errorMessage}`);
+    } finally {
+      setSavingTrip(false);
+    }
+  };
 
   // Navigate to detail page with all data
   const showMoreDetails = (place) => {
@@ -291,21 +283,21 @@ const saveTrip = async () => {
         (error) => {
           setLoadingLocation(false);
           console.error("Error getting location:", error);
-          alert(
+          toast.error(
             "Could not get your location. Please enable location services."
           );
         }
       );
     } else {
       setLoadingLocation(false);
-      alert("Geolocation is not supported by your browser");
+      toast.error("Geolocation is not supported by your browser");
     }
   };
 
   // Show route from user location to destination
   const showRoute = async (destination) => {
     if (!userLocation) {
-      alert("Please enable your location first!");
+      toast.error("Please enable your location first!");
       return;
     }
 
@@ -357,11 +349,11 @@ const saveTrip = async () => {
         console.log("Route created successfully");
       } else {
         console.error("No route found");
-        alert("Could not find a route to this location.");
+        toast.error("Could not find a route to this location.");
       }
     } catch (error) {
       console.error("Error fetching route:", error);
-      alert("Failed to calculate route. Please try again.");
+      toast.error("Failed to calculate route. Please try again.");
     } finally {
       setLoadingRoute(false);
     }

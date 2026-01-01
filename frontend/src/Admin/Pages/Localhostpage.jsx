@@ -3,6 +3,7 @@ import { Search, Plus, Edit2, Trash2, X } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
 import API from "../../api";
+import { toast } from "sonner";
 
 export default function LocalHostsPage() {
   const [localhosts, setLocalhosts] = useState([]);
@@ -30,7 +31,7 @@ export default function LocalHostsPage() {
       }
     } catch (error) {
       console.error("Error fetching localhosts:", error);
-      alert("Failed to fetch localhosts");
+      toast.error("Failed to fetch localhosts");
     } finally {
       setLoading(false);
     }
@@ -60,7 +61,7 @@ export default function LocalHostsPage() {
       const response = await API.post("/hosts/admin/create", formData);
 
       if (response.data.success) {
-        alert("Localhost created successfully!");
+        toast.success("Localhost created successfully!");
         setCreateModalOpen(false);
         setFormData({
           name: "",
@@ -73,7 +74,9 @@ export default function LocalHostsPage() {
       }
     } catch (error) {
       console.error("Error creating localhost:", error);
-      alert(error.response?.data?.message || "Failed to create localhost");
+      toast.error(
+        error.response?.data?.message || "Failed to create localhost"
+      );
     }
   };
 
@@ -86,7 +89,7 @@ export default function LocalHostsPage() {
       );
 
       if (response.data.success) {
-        alert("Localhost updated successfully!");
+        toast.success("Localhost updated successfully!");
         setEditModalOpen(false);
         setSelectedHost(null);
         setFormData({
@@ -100,7 +103,9 @@ export default function LocalHostsPage() {
       }
     } catch (error) {
       console.error("Error updating localhost:", error);
-      alert(error.response?.data?.message || "Failed to update localhost");
+      toast.error(
+        error.response?.data?.message || "Failed to update localhost"
+      );
     }
   };
 
@@ -113,12 +118,14 @@ export default function LocalHostsPage() {
       const response = await API.delete(`/hosts/admin/${host._id}`);
 
       if (response.data.success) {
-        alert("Localhost deleted successfully!");
+        toast.success("Localhost deleted successfully!");
         fetchLocalhosts();
       }
     } catch (error) {
       console.error("Error deleting localhost:", error);
-      alert(error.response?.data?.message || "Failed to delete localhost");
+      toast.error(
+        error.response?.data?.message || "Failed to delete localhost"
+      );
     }
   };
 

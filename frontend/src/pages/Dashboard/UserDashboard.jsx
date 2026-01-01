@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import API from "../../api";
+import { toast } from "sonner";
 
 // Modal Component
 const Modal = ({ isOpen, onClose, title, children }) => {
@@ -237,10 +238,10 @@ export default function UserDashboard() {
       setLocalhostModalOpen(false);
       setSelectedTripForLocalhost(null);
       setAvailableLocalhosts([]);
-      alert("Localhost assigned successfully!");
+      toast.success("Localhost assigned successfully!");
     } catch (error) {
       console.error("Failed to assign localhost:", error);
-      alert("Failed to assign localhost. Please try again.");
+      toast.error("Failed to assign localhost. Please try again.");
     }
   };
 
@@ -446,12 +447,12 @@ export default function UserDashboard() {
   const handleUpdateProfile = async () => {
     try {
       await API.put("/users/me", profileData);
-      alert("Profile updated successfully!");
+      toast.success("Profile updated successfully!");
       setEditModalOpen(false);
       window.location.reload();
     } catch (error) {
       console.error("Failed to update profile:", error);
-      alert("Failed to update profile");
+      toast.error("Failed to update profile");
     }
   };
 
