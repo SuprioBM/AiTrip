@@ -173,142 +173,6 @@ export default function Navigation() {
               </button>
             )}
 
-            {/* Notifications Modal */}
-            {showNotifications && (
-              <div className="fixed inset-0 flex items-center justify-center z-60 p-4 pt-70">
-                <motion.div
-                  initial={{ opacity: 0, translateY: 50 }}
-                  animate={{ opacity: 1, translateY: 0 }}
-                  className="bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[400px] p-6 flex flex-col"
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-between mb-4 flex-shrink-0">
-                    <h2 className="text-2xl font-bold">Notifications</h2>
-                    <button
-                      onClick={() => setShowNotifications(false)}
-                      className="text-gray-400 hover:text-gray-600"
-                    >
-                      <X className="w-6 h-6" />
-                    </button>
-                  </div>
-
-                  {/* Scrollable notifications list */}
-                  <div className="flex-1 overflow-y-auto space-y-3">
-                    {loadingNotifications ? (
-                      <div className="text-center py-6">Loading...</div>
-                    ) : notifications.length === 0 ? (
-                      <div className="text-center py-6 text-gray-500">
-                        No notifications
-                      </div>
-                    ) : (
-                      notifications.map((n) => (
-                        <div
-                          key={n._id}
-                          className="border p-3 rounded-lg flex items-start justify-between gap-3"
-                        >
-                          {/* Notification content */}
-                          <div>
-                            <div className="font-semibold">
-                              {n.actor?.name || "Someone"}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              {n.type === "partner_request" && (
-                                <>Requested to join: {n.data?.placeName}</>
-                              )}
-                              {n.type === "partner_response" && (
-                                <>
-                                  Your request to join{" "}
-                                  <strong>{n.data?.placeName}</strong> was{" "}
-                                  <span
-                                    className={
-                                      n.data?.action === "accept"
-                                        ? "text-green-600 font-semibold"
-                                        : "text-red-600 font-semibold"
-                                    }
-                                  >
-                                    {n.data?.action}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-400">
-                              {new Date(n.createdAt).toLocaleString()}
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex flex-col gap-2">
-                            {n.type === "partner_request" &&
-                              (() => {
-                                const status = memberStatuses[n.data.memberId];
-                                if (status === "accepted")
-                                  return (
-                                    <span className="text-green-600 font-semibold">
-                                      Accepted
-                                    </span>
-                                  );
-                                if (status === "rejected")
-                                  return (
-                                    <span className="text-red-600 font-semibold">
-                                      Rejected
-                                    </span>
-                                  );
-                                return (
-                                  <div className="flex gap-1">
-                                    <button
-                                      onClick={() =>
-                                        respondToRequest(
-                                          n.data.partnerUp,
-                                          n.data.memberId,
-                                          n._id,
-                                          "accept",
-                                          user
-                                        )
-                                      }
-                                      className="px-3 py-1 bg-teal-500 text-white rounded-md flex items-center gap-2"
-                                    >
-                                      <Check className="w-4 h-4" /> Accept
-                                    </button>
-                                    <button
-                                      onClick={() =>
-                                        respondToRequest(
-                                          n.data.partnerUp,
-                                          n.data.memberId,
-                                          n._id,
-                                          "reject",
-                                          user
-                                        )
-                                      }
-                                      className="px-3 py-1 border rounded-md text-sm"
-                                    >
-                                      Reject
-                                    </button>
-                                  </div>
-                                );
-                              })()}
-
-                            {n.type === "partner_response" && (
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={async () => {
-                                    await markNotificationRead(n._id);
-                                    await fetchNotifications();
-                                  }}
-                                  className="px-3 py-1 bg-gray-100 rounded-md text-sm"
-                                >
-                                  Dismiss
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                </motion.div>
-              </div>
-            )}
-
             {/* Profile Button */}
             <div className="relative">
               <button
@@ -356,6 +220,141 @@ export default function Navigation() {
         </div>
       </header>
       {/* Mobile-only header with just hamburger */}
+      {/* Notifications Modal */}
+      {showNotifications && (
+        <div className="fixed inset-0 flex items-center justify-center z-60 p-4 -mt-30">
+          <motion.div
+            initial={{ opacity: 0, translateY: 50 }}
+            animate={{ opacity: 1, translateY: 0 }}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[400px] p-6 flex flex-col"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between mb-4 flex-shrink-0">
+              <h2 className="text-2xl font-bold">Notifications</h2>
+              <button
+                onClick={() => setShowNotifications(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Scrollable notifications list */}
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {loadingNotifications ? (
+                <div className="text-center py-6">Loading...</div>
+              ) : notifications.length === 0 ? (
+                <div className="text-center py-6 text-gray-500">
+                  No notifications
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n._id}
+                    className="border p-3 rounded-lg flex items-start justify-between gap-3"
+                  >
+                    {/* Notification content */}
+                    <div>
+                      <div className="font-semibold">
+                        {n.actor?.name || "Someone"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {n.type === "partner_request" && (
+                          <>Requested to join: {n.data?.placeName}</>
+                        )}
+                        {n.type === "partner_response" && (
+                          <>
+                            Your request to join{" "}
+                            <strong>{n.data?.placeName}</strong> was{" "}
+                            <span
+                              className={
+                                n.data?.action === "accept"
+                                  ? "text-green-600 font-semibold"
+                                  : "text-red-600 font-semibold"
+                              }
+                            >
+                              {n.data?.action}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-400">
+                        {new Date(n.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col gap-2">
+                      {n.type === "partner_request" &&
+                        (() => {
+                          const status = memberStatuses[n.data.memberId];
+                          if (status === "accepted")
+                            return (
+                              <span className="text-green-600 font-semibold">
+                                Accepted
+                              </span>
+                            );
+                          if (status === "rejected")
+                            return (
+                              <span className="text-red-600 font-semibold">
+                                Rejected
+                              </span>
+                            );
+                          return (
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() =>
+                                  respondToRequest(
+                                    n.data.partnerUp,
+                                    n.data.memberId,
+                                    n._id,
+                                    "accept",
+                                    user
+                                  )
+                                }
+                                className="px-3 py-1 bg-teal-500 text-white rounded-md flex items-center gap-2"
+                              >
+                                <Check className="w-4 h-4" /> Accept
+                              </button>
+                              <button
+                                onClick={() =>
+                                  respondToRequest(
+                                    n.data.partnerUp,
+                                    n.data.memberId,
+                                    n._id,
+                                    "reject",
+                                    user
+                                  )
+                                }
+                                className="px-3 py-1 border rounded-md text-sm"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          );
+                        })()}
+
+                      {n.type === "partner_response" && (
+                        <div className="flex gap-1">
+                          <button
+                            onClick={async () => {
+                              await markNotificationRead(n._id);
+                              await fetchNotifications();
+                            }}
+                            className="px-3 py-1 bg-gray-100 rounded-md text-sm"
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        </div>
+      )}
       <div className="fixed top-4 right-4 z-50 md:hidden">
         <button
           onClick={() => setMobileOpen(true)}
