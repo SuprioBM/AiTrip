@@ -1,6 +1,6 @@
 import { useAuth } from "../context/AuthContext";
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import API from "../api";
 import { Bell, X, Check, Shield } from "lucide-react";
 import { motion } from "framer-motion";
@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 export default function Navigation() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
@@ -111,29 +112,30 @@ export default function Navigation() {
         {/* LEFT — NAVIGATION */}
         <div className="flex-shrink-0 -ml-20 px-3">
           <a href="/HomePage">
-            <img
-              src="/logoA.png" // replace with your logo file path
-              alt="AiVoyager Logo"
-              className="h-9 w-auto" // 40px height, auto width
-            />
+            <img src="/logoA.png" alt="AiVoyager Logo" className="h-9 w-auto" />
           </a>
         </div>
         <nav className="flex gap-4 sm:gap-6 md:gap-8 lg:gap-12 text-white font-medium text-sm sm:text-base ml-0.5">
-          {["Destinations", "Mission", "Contact"].map((item, idx) => (
+          {["Destinations", "Mission", "Contact"].map((item) => (
             <button
               key={item}
               type="button"
-              onClick={() =>
-                document
-                  .getElementById(item.toLowerCase())
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-              className="hover:text-blue-200 transition whitespace-nowrap bg-transparent"
-              style={{
-                animation: `navItemSlideDown 0.5s ease-out ${
-                  0.1 + idx * 0.06
-                }s both`,
+              onClick={() => {
+                const sectionId = item.toLowerCase();
+
+                // Check if we're on the homepage
+                if (location.pathname !== "/HomePage") {
+                  // Navigate to homepage with hash
+                  navigate(`/HomePage#${sectionId}`);
+                } else {
+                  // Already on homepage, scroll directly
+                  const element = document.getElementById(sectionId);
+                  if (element) {
+                    element.scrollIntoView({ behavior: "smooth" });
+                  }
+                }
               }}
+              className="hover:text-blue-200 transition whitespace-nowrap bg-transparent"
             >
               {item}
             </button>
