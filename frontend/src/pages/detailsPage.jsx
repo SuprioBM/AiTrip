@@ -11,7 +11,7 @@ import {
   X,
   Check,
 } from "lucide-react";
-import axios from "axios";
+import API from "../api";
 
 const DetailsPage = () => {
   // ============================================================================
@@ -53,13 +53,7 @@ const DetailsPage = () => {
     hasPrevPage: false,
   });
 
-
-    const images = [
-      "/1.jpg",
-      "/2.jpg",
-      "/3.jpg",
-      "/4.jpg",
-    ];  
+  const images = ["/1.jpg", "/2.jpg", "/3.jpg", "/4.jpg"];
   // ============================================================================
   // EFFECT: Load place data from URL on component mount
   // ============================================================================
@@ -87,12 +81,15 @@ const DetailsPage = () => {
     try {
       const locationId = placeData.xid || placeData.locationId || placeData.id;
       if (locationId) {
-        const response = await axios.get(
-          `http://localhost:5000/api/reviews/location/${locationId}?page=1&limit=${limit}`
+        const response = await API.get(
+          `/reviews/location/${locationId}?page=1&limit=${limit}`
         );
 
         if (append) {
-          setReviews((prevReviews) => [...prevReviews, ...response.data.reviews]);
+          setReviews((prevReviews) => [
+            ...prevReviews,
+            ...response.data.reviews,
+          ]);
         } else {
           setReviews(response.data.reviews);
         }
@@ -147,26 +144,23 @@ const DetailsPage = () => {
 
       const locationId = placeData.xid || placeData.locationId || placeData.id;
 
-      await axios.post(
-        "http://localhost:5000/api/reviews",
-        {
-          locationId: locationId,
-          locationName: placeData.name,
-          rating: newReview.rating,
-          comment: newReview.comment,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await API.post("/reviews", {
+        locationId: locationId,
+        locationName: placeData.name,
+        rating: newReview.rating,
+        comment: newReview.comment,
+      });
 
       // Reset form
       setNewReview({ rating: 5, comment: "" });
 
       // Refresh reviews - load based on current state
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews;
       fetchReviews(currentLimit);
 
       alert("Review submitted successfully!");
@@ -205,10 +199,13 @@ const DetailsPage = () => {
   // ============================================================================
   const handleMarkHelpful = async (reviewId) => {
     try {
-      await axios.post(
-        `http://localhost:5000/api/reviews/${reviewId}/helpful`
-      );
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
+      await API.post(`/reviews/${reviewId}/helpful`);
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews;
       fetchReviews(currentLimit);
     } catch (error) {
       console.error("Error marking helpful:", error);
@@ -251,22 +248,19 @@ const DetailsPage = () => {
         return;
       }
 
-      await axios.put(
-        `http://localhost:5000/api/reviews/${reviewId}`,
-        {
-          rating: editedReview.rating,
-          comment: editedReview.comment,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await API.put(`/reviews/${reviewId}`, {
+        rating: editedReview.rating,
+        comment: editedReview.comment,
+      });
 
       setEditingReviewId(null);
       setEditedReview({ rating: 5, comment: "" });
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews;
       fetchReviews(currentLimit);
       alert("Review updated successfully!");
     } catch (error) {
@@ -298,13 +292,14 @@ const DetailsPage = () => {
         return;
       }
 
-      await axios.delete(`http://localhost:5000/api/reviews/${reviewId}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      await API.delete(`/reviews/${reviewId}`);
 
-      const currentLimit = loadMoreCount === 0 ? 2 : loadMoreCount === 1 ? 5 : pagination.totalReviews;
+      const currentLimit =
+        loadMoreCount === 0
+          ? 2
+          : loadMoreCount === 1
+          ? 5
+          : pagination.totalReviews;
       fetchReviews(currentLimit);
       alert("Review deleted successfully!");
     } catch (error) {
