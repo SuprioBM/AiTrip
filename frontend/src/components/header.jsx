@@ -370,7 +370,7 @@ export default function Navigation() {
       {/* Mobile drawer/modal (right-side) - Outside header, full screen */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-[100] flex h-dvh-full"
+          className="fixed inset-0 z-[100] flex h-[100dvh]"
           role="dialog"
           aria-modal="true"
           onClick={() => setMobileOpen(false)}
