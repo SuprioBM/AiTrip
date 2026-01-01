@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import API from "../api";
 import { toast } from "sonner";
+import confirmToast from "../utils/confirm";
 
 const DetailsPage = () => {
   // ============================================================================
@@ -281,9 +282,10 @@ const DetailsPage = () => {
   // FUNCTION: handleDeleteReview - Delete a review
   // ============================================================================
   const handleDeleteReview = async (reviewId) => {
-    if (!window.confirm("Are you sure you want to delete this review?")) {
-      return;
-    }
+    const confirmed = await confirmToast(
+      "Are you sure you want to delete this review?"
+    );
+    if (!confirmed) return;
 
     try {
       const token = localStorage.getItem("token");

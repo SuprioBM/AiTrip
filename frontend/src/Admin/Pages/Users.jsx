@@ -3,7 +3,7 @@ import { Search, ChevronDown } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
 import { useAdmin } from "../../context/AdminContext";
-
+import confirmToast from "../../utils/confirm";
 
 export default function UsersManagementPage() {
   const { stats, removeItem } = useAdmin();
@@ -24,7 +24,6 @@ export default function UsersManagementPage() {
     setModalOpen(true);
   };
 
-  
   const columns = [
     { key: "name", label: "Name" },
     { key: "email", label: "Email" },
@@ -61,7 +60,12 @@ export default function UsersManagementPage() {
     {
       label: "Remove",
       className: "bg-red-100 text-red-700 hover:bg-red-200",
-      onClick: (user) => removeItem("User", user._id),
+      onClick: async (user) => {
+        const confirmed = await confirmToast(
+          `Are you sure you want to remove ${user.name}?`
+        );
+        if (confirmed) removeItem("User", user._id);
+      },
     },
   ];
 
@@ -169,6 +173,16 @@ export default function UsersManagementPage() {
               </button>
               <button
                 className="flex-1 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-200"
+                onClick={async () => {
+                  const confirmed = await confirmToast(
+                    `Are you sure you want to remove ${selectedUser.name}?`
+                  );
+                  if (confirmed) {
+                    removeItem("User", selectedUser._id);
+                    setModalOpen(false);
+                    setSelectedUser(null);
+                  }
+                }}
               >
                 Remove
               </button>

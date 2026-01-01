@@ -4,6 +4,7 @@ import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
 import API from "../../api";
 import { toast } from "sonner";
+import confirmToast from "../../utils/confirm";
 
 export default function LocalHostsPage() {
   const [localhosts, setLocalhosts] = useState([]);
@@ -110,9 +111,10 @@ export default function LocalHostsPage() {
   };
 
   const handleDelete = async (host) => {
-    if (!confirm(`Are you sure you want to delete ${host.name}?`)) {
-      return;
-    }
+    const confirmed = await confirmToast(
+      `Are you sure you want to delete ${host.name}?`
+    );
+    if (!confirmed) return;
 
     try {
       const response = await API.delete(`/hosts/admin/${host._id}`);
