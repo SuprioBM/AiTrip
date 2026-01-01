@@ -13,20 +13,22 @@ const ReviewPage = () => {
   useEffect(() => {
     const fetchReviews = async () => {
       try {
-        // Get the place data from URL
+        // Get the encoded place data from the URL search params.
+        // Expected to be an encoded JSON string that contains at least
+        // a `locationId` or `id` field to fetch reviews for.
         const encodedData = searchParams.get("data");
         if (encodedData) {
           const decodedData = decodeURIComponent(encodedData);
           const parsedData = JSON.parse(decodedData);
           setPlaceData(parsedData);
 
-          // Fetch reviews from backend
+          // Fetch reviews based on location ID
           const locationId = parsedData.locationId || parsedData.id;
           if (locationId) {
             const response = await API.get(`/reviews/location/${locationId}`);
             setReviews(response.data);
 
-            // Calculate average rating
+            // Compute a simple average rating for display purposes.
             if (response.data.length > 0) {
               const avg =
                 response.data.reduce((sum, review) => sum + review.rating, 0) /
@@ -91,7 +93,7 @@ const ReviewPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-4">
       <div className="max-w-5xl mx-auto">
-        {/* Back Button */}
+        {/* Back button: navigates to the details page preserving the encoded data */}
         <button
           onClick={handleGoBack}
           className="mb-6 flex items-center gap-2 text-teal-600 hover:text-teal-700 transition-colors group"
@@ -100,7 +102,7 @@ const ReviewPage = () => {
           <span className="font-semibold">Back to Details</span>
         </button>
 
-        {/* Header */}
+        {/* Header: shows place name, category and average rating */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           {placeData && (
             <div>
@@ -124,7 +126,7 @@ const ReviewPage = () => {
           </div>
         </div>
 
-        {/* Reviews List */}
+        {/* Reviews list: iterates over fetched reviews and renders UI for each */}
         <div className="space-y-4">
           {reviews.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -138,7 +140,7 @@ const ReviewPage = () => {
                 key={review._id}
                 className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
               >
-                {/* Review Header */}
+                {/* Review header: avatar, author name, post date, and star rating */}
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-teal-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
@@ -156,14 +158,14 @@ const ReviewPage = () => {
                   <div>{renderStars(review.rating)}</div>
                 </div>
 
-                {/* Review Content */}
+                {/* Review content: user comment text */}
                 <div className="mb-4">
                   <p className="text-gray-700 leading-relaxed">
                     {review.comment}
                   </p>
                 </div>
 
-                {/* Review Footer */}
+                {/* Review footer: helpful button and verified badge (if present) */}
                 <div className="flex items-center gap-4 pt-4 border-t border-gray-100">
                   <button className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors">
                     <ThumbsUp className="w-4 h-4" />
