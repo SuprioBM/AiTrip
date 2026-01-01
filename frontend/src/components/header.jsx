@@ -109,14 +109,15 @@ export default function Navigation() {
     <header className="fixed top-1 left-1/2 -translate-x-1/2 z-50 backdrop-blur-lg bg-black/60 border border-white/20 rounded-full w-[95%] h-18">
       <div className="max-w-7xl mx-auto px-6 mt-3  flex items-center">
         {/* LEFT — NAVIGATION */}
-          <div className="flex-shrink-0 -ml-20 px-3">
-            <a href="/HomePage">
+        <div className="flex-shrink-0 -ml-20 px-3">
+          <a href="/HomePage">
             <img
               src="/logoA.png" // replace with your logo file path
               alt="AiVoyager Logo"
               className="h-9 w-auto" // 40px height, auto width
-            /></a>
-          </div>
+            />
+          </a>
+        </div>
         <nav className="flex gap-4 sm:gap-6 md:gap-8 lg:gap-12 text-white font-medium text-sm sm:text-base ml-0.5">
           {["Destinations", "Mission", "Contact"].map((item, idx) => (
             <button
@@ -166,13 +167,14 @@ export default function Navigation() {
 
           {/* Notifications Modal */}
           {showNotifications && (
-            <div className="fixed inset-0 flex items-center justify-center z-60 p-4 pt-30">
+            <div className="fixed inset-0 flex items-center justify-center z-60 p-4 pt-70">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6"
+                initial={{ opacity: 0, translateY: 50 }}
+                animate={{ opacity: 1, translateY: 0 }}
+                className="bg-white rounded-2xl shadow-2xl w-full max-w-lg h-[400px] p-6 flex flex-col"
               >
-                <div className="flex items-center justify-between mb-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4 flex-shrink-0">
                   <h2 className="text-2xl font-bold">Notifications</h2>
                   <button
                     onClick={() => setShowNotifications(false)}
@@ -182,7 +184,8 @@ export default function Navigation() {
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-80 overflow-auto">
+                {/* Scrollable notifications list */}
+                <div className="flex-1 overflow-y-auto space-y-3">
                   {loadingNotifications ? (
                     <div className="text-center py-6">Loading...</div>
                   ) : notifications.length === 0 ? (
@@ -195,6 +198,7 @@ export default function Navigation() {
                         key={n._id}
                         className="border p-3 rounded-lg flex items-start justify-between gap-3"
                       >
+                        {/* Notification content */}
                         <div>
                           <div className="font-semibold">
                             {n.actor?.name || "Someone"}
@@ -224,6 +228,7 @@ export default function Navigation() {
                           </div>
                         </div>
 
+                        {/* Actions */}
                         <div className="flex flex-col gap-2">
                           {n.type === "partner_request" &&
                             (() => {
