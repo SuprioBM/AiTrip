@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Star, ThumbsUp } from "lucide-react";
-import axios from "axios";
-
+import API from "../api";
 const ReviewPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -24,9 +23,7 @@ const ReviewPage = () => {
           // Fetch reviews from backend
           const locationId = parsedData.locationId || parsedData.id;
           if (locationId) {
-            const response = await axios.get(
-              `http://localhost:5000/api/reviews/location/${locationId}`
-            );
+            const response = await API.get(`/reviews/location/${locationId}`);
             setReviews(response.data);
 
             // Calculate average rating

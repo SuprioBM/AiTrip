@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import API from "../../api";
 
 export default function LocalHostsPage() {
   const [localhosts, setLocalhosts] = useState([]);
@@ -25,11 +23,8 @@ export default function LocalHostsPage() {
   const fetchLocalhosts = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/hosts/admin/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
+      const response = await API.get("/hosts/admin/all");
+
       if (response.data.success) {
         setLocalhosts(response.data.data);
       }
@@ -62,14 +57,7 @@ export default function LocalHostsPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_URL}/hosts/admin/create`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await API.post("/hosts/admin/create", formData);
 
       if (response.data.success) {
         alert("Localhost created successfully!");
@@ -92,13 +80,9 @@ export default function LocalHostsPage() {
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_URL}/hosts/admin/${selectedHost._id}`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await API.put(
+        `/hosts/admin/${selectedHost._id}`,
+        formData
       );
 
       if (response.data.success) {
@@ -126,13 +110,7 @@ export default function LocalHostsPage() {
     }
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.delete(
-        `${API_URL}/hosts/admin/${host._id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await API.delete(`/hosts/admin/${host._id}`);
 
       if (response.data.success) {
         alert("Localhost deleted successfully!");
@@ -273,7 +251,9 @@ export default function LocalHostsPage() {
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
                   Location
                 </label>
-                <p className="text-foreground mt-1">{selectedHost.locationName}</p>
+                <p className="text-foreground mt-1">
+                  {selectedHost.locationName}
+                </p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
@@ -354,7 +334,8 @@ export default function LocalHostsPage() {
               placeholder="First 3 letters (e.g., dha, lon, par)"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              First 3 letters of location. ID will be auto-generated (e.g., dha101)
+              First 3 letters of location. ID will be auto-generated (e.g.,
+              dha101)
             </p>
           </div>
           <div>
