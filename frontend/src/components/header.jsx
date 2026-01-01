@@ -370,13 +370,13 @@ export default function Navigation() {
       {/* Mobile drawer/modal (right-side) - Outside header, full screen */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-[100] flex"
+          className="fixed inset-0 z-[100] flex h-dvh-full"
           role="dialog"
           aria-modal="true"
           onClick={() => setMobileOpen(false)}
         >
           {/* Overlay (left side) */}
-          <div className="flex-1 h-full bg-black/60 backdrop-blur-sm" />
+          <div className="flex-1 bg-black/60 backdrop-blur-sm" />
 
           {/* Drawer (right side) */}
           <motion.div
@@ -384,7 +384,7 @@ export default function Navigation() {
             animate={{ x: 0, opacity: 1 }}
             exit={{ x: "100%", opacity: 0 }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="w-[70%] sm:w-[60%] h-full p-6 overflow-auto bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white shadow-2xl"
+            className="w-[70%] sm:w-[60%] h-[100dvh] p-6 overflow-auto bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="relative h-full flex flex-col">
