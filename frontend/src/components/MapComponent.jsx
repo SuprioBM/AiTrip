@@ -235,12 +235,7 @@ export default function MapComponent({ center, markers = [], userData = {} }) {
     // Option 1: Using query parameter
     window.location.href = `/details?data=${encodedData}`;
 
-    // Option 2: Using React Router with state (if you're using React Router)
-    // navigate('/place-details', { state: { placeData: place } });
 
-    // Option 3: Using sessionStorage (alternative approach)
-    // sessionStorage.setItem('selectedPlace', JSON.stringify(place));
-    // window.location.href = '/place-details';
   };
 
   // Get user's current location

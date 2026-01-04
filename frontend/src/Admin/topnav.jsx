@@ -1,9 +1,11 @@
 import React from "react";
 import { Search, Bell, Menu, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import {useAuth}  from "../context/AuthContext"
 
 export default function TopNav({ onMenuToggle }) {
   const navigate = useNavigate();
+  const {user} = useAuth();
 
   return (
     <header className="bg-card border-b border-border px-8 py-4">
@@ -44,8 +46,8 @@ export default function TopNav({ onMenuToggle }) {
               <span className="text-white text-xs font-bold">AB</span>
             </div>
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-foreground">Admin</p>
-              <p className="text-xs text-muted-foreground">admin@aitrip.com</p>
+              <p className="text-sm font-medium text-foreground">{user?.name || "Admin"}</p>
+              <p className="text-xs text-muted-foreground">{user?.email || "admin@aitrip.com"}</p>
             </div>
           </button>
 
