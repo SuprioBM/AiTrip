@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Search, Plus, Edit2, Trash2, X } from "lucide-react";
 import DataTable from "../../components/ui/data-table";
 import Modal from "../../components/ui/modal";
-import axios from "axios";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+import API from "../../api";
+import { toast } from "sonner";
+import confirmToast from "../../utils/confirm";
 
 export default function LocalHostsPage() {
   const [localhosts, setLocalhosts] = useState([]);
@@ -25,17 +25,14 @@ export default function LocalHostsPage() {
   const fetchLocalhosts = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem("token");
-      const response = await axios.get(`${API_URL}/hosts/admin/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
+      const response = await API.get("/hosts/admin/all");
+
       if (response.data.success) {
         setLocalhosts(response.data.data);
       }
     } catch (error) {
       console.error("Error fetching localhosts:", error);
-      alert("Failed to fetch localhosts");
+      toast.error("Failed to fetch localhosts");
     } finally {
       setLoading(false);
     }
@@ -62,17 +59,10 @@ export default function LocalHostsPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_URL}/hosts/admin/create`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await API.post("/hosts/admin/create", formData);
 
       if (response.data.success) {
-        alert("Localhost created successfully!");
+        toast.success("Localhost created successfully!");
         setCreateModalOpen(false);
         setFormData({
           name: "",
@@ -85,24 +75,22 @@ export default function LocalHostsPage() {
       }
     } catch (error) {
       console.error("Error creating localhost:", error);
-      alert(error.response?.data?.message || "Failed to create localhost");
+      toast.error(
+        error.response?.data?.message || "Failed to create localhost"
+      );
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.put(
-        `${API_URL}/hosts/admin/${selectedHost._id}`,
-        formData,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await API.put(
+        `/hosts/admin/${selectedHost._id}`,
+        formData
       );
 
       if (response.data.success) {
-        alert("Localhost updated successfully!");
+        toast.success("Localhost updated successfully!");
         setEditModalOpen(false);
         setSelectedHost(null);
         setFormData({
@@ -116,31 +104,30 @@ export default function LocalHostsPage() {
       }
     } catch (error) {
       console.error("Error updating localhost:", error);
-      alert(error.response?.data?.message || "Failed to update localhost");
+      toast.error(
+        error.response?.data?.message || "Failed to update localhost"
+      );
     }
   };
 
   const handleDelete = async (host) => {
-    if (!confirm(`Are you sure you want to delete ${host.name}?`)) {
-      return;
-    }
+    const confirmed = await confirmToast(
+      `Are you sure you want to delete ${host.name}?`
+    );
+    if (!confirmed) return;
 
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.delete(
-        `${API_URL}/hosts/admin/${host._id}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const response = await API.delete(`/hosts/admin/${host._id}`);
 
       if (response.data.success) {
-        alert("Localhost deleted successfully!");
+        toast.success("Localhost deleted successfully!");
         fetchLocalhosts();
       }
     } catch (error) {
       console.error("Error deleting localhost:", error);
-      alert(error.response?.data?.message || "Failed to delete localhost");
+      toast.error(
+        error.response?.data?.message || "Failed to delete localhost"
+      );
     }
   };
 
@@ -273,7 +260,9 @@ export default function LocalHostsPage() {
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
                   Location
                 </label>
-                <p className="text-foreground mt-1">{selectedHost.locationName}</p>
+                <p className="text-foreground mt-1">
+                  {selectedHost.locationName}
+                </p>
               </div>
               <div>
                 <label className="text-xs font-semibold text-muted-foreground uppercase">
@@ -354,7 +343,8 @@ export default function LocalHostsPage() {
               placeholder="First 3 letters (e.g., dha, lon, par)"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              First 3 letters of location. ID will be auto-generated (e.g., dha101)
+              First 3 letters of location. ID will be auto-generated (e.g.,
+              dha101)
             </p>
           </div>
           <div>

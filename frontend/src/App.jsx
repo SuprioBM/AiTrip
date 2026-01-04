@@ -15,6 +15,7 @@ import UserDashboard from "./pages/Dashboard/UserDashboard.jsx";
 
 import MainLayout from "./layouts/layout_1.jsx";
 import EmptyLayout from "./layouts/layout_0.jsx";
+import ScrollToHash from "./utils/Scroll.jsx";
 
 const App = () => {
   const { user, loading } = useAuth();
@@ -25,6 +26,7 @@ const App = () => {
     <>
       <Toaster position="top-right" richColors duration={4000} />
 
+        <ScrollToHash />
       <Routes>
         {/* Routes without header/footer */}
         <Route element={<EmptyLayout />}>

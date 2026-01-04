@@ -3,9 +3,16 @@ import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import MapComponent from '../components/MapComponent'
 import API from '../api'
+import { toast } from 'sonner'
 import { Plus, X, Users, Calendar, DollarSign, Clock } from 'lucide-react'
 
-// Check for refresh BEFORE component renders
+/**
+ * Check whether the current navigation was a page refresh.
+ * If the page was reloaded, clear transient booking state stored in
+ * `sessionStorage` so the UI starts fresh.
+ * This runs before the component mounts so it can decide initial state.
+ * @returns {boolean} true if page was reloaded, false otherwise
+ */
 const checkAndClearOnRefresh = () => {
   const navigationEntries = performance.getEntriesByType('navigation')
   const wasRefreshed =
@@ -23,13 +30,20 @@ const checkAndClearOnRefresh = () => {
   return false // Normal navigation
 }
 
-// Run check before component definition
+// Run check before component definition and capture the boolean result
 const wasPageRefreshed = checkAndClearOnRefresh()
 
+/**
+ * BookingPage component
+ * - Provides a form to request AI-generated trip suggestions.
+ * - Persists intermediate state in `sessionStorage` to survive navigation
+ *   (but clears on full page refresh).
+ * - Integrates map markers, PartnerUp (matchmaking), and Localhost assignment
+ *   workflows.
+ */
 export default function BookingPage() {
   const { user } = useAuth()
-  // User object from AuthContext (used when assigning localhost / creating trips)
-  // console.log(user); // debug: commented out before pushing
+  console.log(user)
 
   // Initialize from sessionStorage (will be empty if refreshed)
   const [formData, setFormData] = useState(() => {
@@ -111,6 +125,12 @@ export default function BookingPage() {
   })
   const [savingTrip, setSavingTrip] = useState(false)
 
+  /**
+   * Search PartnerUp matches.
+   * - Accepts optional `lat` and `lon`; when provided uses coordinates,
+   *   otherwise falls back to `selectedLocation`.
+   * - Calls backend `/partnerup/search` and updates `matchingPartners`.
+   */
   const searchPartners = async (lat, lon) => {
     // Search partner-ups by coordinates (preferred) or by selectedLocation
     const useLat = typeof lat === 'number' || (lat && !isNaN(Number(lat)))
@@ -173,6 +193,11 @@ export default function BookingPage() {
   }, [tripDetails.startDate, tripDetails.endDate])
 
   // Calculate days between dates
+  /**
+   * calculateDays
+   * - Returns the inclusive number of days between two ISO date strings.
+   * - Returns 0 if either date is missing.
+   */
   const calculateDays = (start, end) => {
     if (!start || !end) return 0
     const startDate = new Date(start)
@@ -183,14 +208,21 @@ export default function BookingPage() {
   }
 
   // Assign localhost to trip
+  /**
+   * handleAssignLocalhost
+   * - Associates a chosen `host` (localhost) with a new trip by posting
+   *   trip data to the `/trips` endpoint.
+   * - Requires an authenticated `user` and a `selectedLocation`.
+   * - Shows success/error toasts and prevents duplicate trips.
+   */
   const handleAssignLocalhost = async (host) => {
     if (!user) {
-      alert('Please login to assign localhost')
+      toast.error('Please login to assign localhost')
       return
     }
 
     if (!selectedLocation) {
-      alert('Please select a location first')
+      toast.error('Please select a location first')
       return
     }
 
@@ -198,8 +230,6 @@ export default function BookingPage() {
     setSavingTrip(true)
     try {
       // Create unique placeId combining location and localhost
-      // NOTE: this is a simple unique id strategy used locally.
-      // Backend should ideally generate canonical unique ids; this is a client-side helper.
       const locationCode = selectedLocation.name
         .substring(0, 4)
         .toLowerCase()
@@ -215,13 +245,12 @@ export default function BookingPage() {
         localhostName: host.name,
       }
 
-      // console.log('Assigning localhost to trip:', tripData);
-      // POST to backend to create/save trip. Backend must accept: placeId, destination, selectedPins, localhost, etc.
+      console.log('Assigning localhost to trip:', tripData)
       const { data } = await API.post('/trips', tripData)
-      // console.log('Response:', data);
+      console.log('Response:', data)
 
       if (data.trip) {
-        alert(
+        toast.success(
           `Localhost "${host.name}" assigned to your trip successfully! View it in your dashboard.`
         )
       }
@@ -230,13 +259,12 @@ export default function BookingPage() {
       console.error('Error response:', error.response?.data)
       const errorMsg = error.response?.data?.message || error.message
 
-      // Backend may reject duplicate trips; surface friendly messages to the user.
       if (errorMsg.includes('duplicate') || errorMsg.includes('unique')) {
-        alert(
+        toast.error(
           'You have already created a trip for this location with this localhost. Check your dashboard.'
         )
       } else {
-        alert(`Failed to assign localhost: ${errorMsg}`)
+        toast.error(`Failed to assign localhost: ${errorMsg}`)
       }
     } finally {
       setSavingTrip(false)
@@ -244,6 +272,14 @@ export default function BookingPage() {
   }
 
   // Fetch localhosts by location
+  /**
+   * fetchLocalhosts
+   * - Uses a simple location-code heuristic (first 3 letters of
+   *   `selectedLocation.name`) to request hosts from `/hosts/:locationCode`.
+   * - Updates `localhosts` and `loadingLocalhosts` state.
+   * - Note: the heuristic is brittle; prefer server-side geo lookup if
+   *   available.
+   */
   const fetchLocalhosts = async () => {
     if (!selectedLocation) return
 
@@ -256,11 +292,11 @@ export default function BookingPage() {
         ? selectedLocation.name.toLowerCase().substring(0, 3)
         : 'unk'
 
-      // console.log('🔍 Fetching localhosts for location code:', locationCode);
+      console.log('🔍 Fetching localhosts for location code:', locationCode)
 
       const { data } = await API.get(`/hosts/${locationCode}`)
 
-      // console.log('✅ Localhosts fetched:', data);
+      console.log('✅ Localhosts fetched:', data)
       setLocalhosts(data.data || [])
     } catch (error) {
       console.error('Error fetching localhosts:', error)
@@ -297,6 +333,10 @@ export default function BookingPage() {
   }, [stats])
 
   // Handle input changes
+  /**
+   * handleChange
+   * - Generic onChange handler for form fields stored in `formData`.
+   */
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData((prev) => ({
@@ -306,6 +346,13 @@ export default function BookingPage() {
   }
 
   // Submit and call backend
+  /**
+   * handleSubmit
+   * - Submits the booking form to the AI endpoint `/ai/trip-suggestions`.
+   * - Resets marker/stats state, sets loading state and on success
+   *   populates `selectedLocation`, `mapMarkers`, and `stats`.
+   * - Triggers `searchPartners()` after successful suggestions.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -396,7 +443,7 @@ export default function BookingPage() {
       }
     } catch (error) {
       console.error('AI suggestion error:', error)
-      alert('Failed to get suggestions. Please try again.')
+      toast.error('Failed to get suggestions. Please try again.')
     } finally {
       setLoadingAI(false)
     }
@@ -444,7 +491,7 @@ export default function BookingPage() {
     e.preventDefault()
 
     if (!selectedLocation) {
-      alert('Please search for a location first')
+      toast.error('Please search for a location first')
       return
     }
 
@@ -478,13 +525,13 @@ export default function BookingPage() {
       if (data.success) {
         setMyPartnerUp(data.data)
         setShowPartnerUpForm(false)
-        alert('PartnerUp created successfully!')
+        toast.success('PartnerUp created successfully!')
         // Search for matching partners
         searchPartners()
       }
     } catch (error) {
       console.error('Error creating PartnerUp:', error)
-      alert(error.response?.data?.message || 'Failed to create PartnerUp')
+      toast.error(error.response?.data?.message || 'Failed to create PartnerUp')
     }
   }
 
@@ -518,11 +565,11 @@ export default function BookingPage() {
       )
 
       if (data && data.success) {
-        alert('Partner request sent successfully!')
+        toast.success('Partner request sent successfully!')
       }
     } catch (error) {
       console.error('Error sending partner request:', error)
-      alert(error.response?.data?.message || 'Failed to send request')
+      toast.error(error.response?.data?.message || 'Failed to send request')
     }
   }
 

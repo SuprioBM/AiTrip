@@ -10,8 +10,15 @@ import {
   Edit2,
   X,
   Check,
+<<<<<<< HEAD
 } from 'lucide-react'
 import axios from 'axios'
+=======
+} from "lucide-react";
+import API from "../api";
+import { toast } from "sonner";
+import confirmToast from "../utils/confirm";
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
 
 const DetailsPage = () => {
   // ============================================================================
@@ -59,7 +66,11 @@ const DetailsPage = () => {
     hasPrevPage: false,
   })
 
+<<<<<<< HEAD
   const images = ['/1.jpg', '/2.jpg', '/3.jpg', '/4.jpg']
+=======
+  const images = ["/1.jpg", "/2.jpg", "/3.jpg", "/4.jpg"];
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
   // ============================================================================
   // EFFECT: Load place data from URL on component mount
   // ============================================================================
@@ -87,17 +98,27 @@ const DetailsPage = () => {
     try {
       const locationId = placeData.xid || placeData.locationId || placeData.id
       if (locationId) {
+<<<<<<< HEAD
         // Fetch paginated reviews for the current location from backend.
         // NOTE: API base is hardcoded to localhost here; replace with `process.env` in production.
         const response = await axios.get(
           `http://localhost:5000/api/reviews/location/${locationId}?page=1&limit=${limit}`
         )
+=======
+        const response = await API.get(
+          `/reviews/location/${locationId}?page=1&limit=${limit}`
+        );
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
 
         if (append) {
           setReviews((prevReviews) => [
             ...prevReviews,
             ...response.data.reviews,
+<<<<<<< HEAD
           ])
+=======
+          ]);
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
         } else {
           setReviews(response.data.reviews)
         }
@@ -139,21 +160,33 @@ const DetailsPage = () => {
     e.preventDefault()
 
     if (!newReview.comment.trim()) {
+<<<<<<< HEAD
       alert('Please enter a comment')
       return
+=======
+      toast.error("Please enter a comment");
+      return;
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
     }
 
     setSubmitting(true)
     try {
       const token = localStorage.getItem('token')
       if (!token) {
+<<<<<<< HEAD
         alert('Please login to submit a review')
         navigate('/login')
         return
+=======
+        toast.error("Please login to submit a review");
+        navigate("/login");
+        return;
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
       }
 
       const locationId = placeData.xid || placeData.locationId || placeData.id
 
+<<<<<<< HEAD
       await axios.post(
         'http://localhost:5000/api/reviews',
         {
@@ -168,6 +201,14 @@ const DetailsPage = () => {
           },
         }
       )
+=======
+      await API.post("/reviews", {
+        locationId: locationId,
+        locationName: placeData.name,
+        rating: newReview.rating,
+        comment: newReview.comment,
+      });
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
 
       // Reset form
       setNewReview({ rating: 5, comment: '' })
@@ -178,19 +219,35 @@ const DetailsPage = () => {
           ? 2
           : loadMoreCount === 1
           ? 5
+<<<<<<< HEAD
           : pagination.totalReviews
       fetchReviews(currentLimit)
 
       alert('Review submitted successfully!')
+=======
+          : pagination.totalReviews;
+      fetchReviews(currentLimit);
+
+      toast.success("Review submitted successfully!");
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
     } catch (error) {
       console.error('Error submitting review:', error)
       if (error.response?.status === 401) {
+<<<<<<< HEAD
         alert('Please login to submit a review')
         navigate('/login')
       } else if (error.response?.status === 400) {
         alert(error.response.data.message || 'Error submitting review')
       } else {
         alert('Failed to submit review. Please try again.')
+=======
+        toast.error("Please login to submit a review");
+        navigate("/login");
+      } else if (error.response?.status === 400) {
+        toast.error(error.response.data.message || "Error submitting review");
+      } else {
+        toast.error("Failed to submit review. Please try again.");
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
       }
     } finally {
       setSubmitting(false)
@@ -217,14 +274,23 @@ const DetailsPage = () => {
   // ============================================================================
   const handleMarkHelpful = async (reviewId) => {
     try {
+<<<<<<< HEAD
       await axios.post(`http://localhost:5000/api/reviews/${reviewId}/helpful`)
+=======
+      await API.post(`/reviews/${reviewId}/helpful`);
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
       const currentLimit =
         loadMoreCount === 0
           ? 2
           : loadMoreCount === 1
           ? 5
+<<<<<<< HEAD
           : pagination.totalReviews
       fetchReviews(currentLimit)
+=======
+          : pagination.totalReviews;
+      fetchReviews(currentLimit);
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
     } catch (error) {
       console.error('Error marking helpful:', error)
     }
@@ -254,13 +320,19 @@ const DetailsPage = () => {
   // ============================================================================
   const handleUpdateReview = async (reviewId) => {
     if (!editedReview.comment.trim()) {
+<<<<<<< HEAD
       alert('Please enter a comment')
       return
+=======
+      toast.error("Please enter a comment");
+      return;
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
     }
 
     try {
       const token = localStorage.getItem('token')
       if (!token) {
+<<<<<<< HEAD
         alert('Please login to update review')
         navigate('/login')
         return
@@ -281,23 +353,52 @@ const DetailsPage = () => {
 
       setEditingReviewId(null)
       setEditedReview({ rating: 5, comment: '' })
+=======
+        toast.error("Please login to update review");
+        navigate("/login");
+        return;
+      }
+
+      await API.put(`/reviews/${reviewId}`, {
+        rating: editedReview.rating,
+        comment: editedReview.comment,
+      });
+
+      setEditingReviewId(null);
+      setEditedReview({ rating: 5, comment: "" });
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
       const currentLimit =
         loadMoreCount === 0
           ? 2
           : loadMoreCount === 1
           ? 5
+<<<<<<< HEAD
           : pagination.totalReviews
       fetchReviews(currentLimit)
       alert('Review updated successfully!')
+=======
+          : pagination.totalReviews;
+      fetchReviews(currentLimit);
+      toast.success("Review updated successfully!");
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
     } catch (error) {
       console.error('Error updating review:', error)
       if (error.response?.status === 401) {
+<<<<<<< HEAD
         alert('Please login to update review')
         navigate('/login')
       } else if (error.response?.status === 403) {
         alert('You can only update your own reviews')
       } else {
         alert('Failed to update review. Please try again.')
+=======
+        toast.error("Please login to update review");
+        navigate("/login");
+      } else if (error.response?.status === 403) {
+        toast.error("You can only update your own reviews");
+      } else {
+        toast.error("Failed to update review. Please try again.");
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
       }
     }
   }
@@ -306,13 +407,21 @@ const DetailsPage = () => {
   // FUNCTION: handleDeleteReview - Delete a review
   // ============================================================================
   const handleDeleteReview = async (reviewId) => {
+<<<<<<< HEAD
     if (!window.confirm('Are you sure you want to delete this review?')) {
       return
     }
+=======
+    const confirmed = await confirmToast(
+      "Are you sure you want to delete this review?"
+    );
+    if (!confirmed) return;
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
 
     try {
       const token = localStorage.getItem('token')
       if (!token) {
+<<<<<<< HEAD
         alert('Please login to delete review')
         navigate('/login')
         return
@@ -323,24 +432,47 @@ const DetailsPage = () => {
           Authorization: `Bearer ${token}`,
         },
       })
+=======
+        toast.error("Please login to delete review");
+        navigate("/login");
+        return;
+      }
+
+      await API.delete(`/reviews/${reviewId}`);
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
 
       const currentLimit =
         loadMoreCount === 0
           ? 2
           : loadMoreCount === 1
           ? 5
+<<<<<<< HEAD
           : pagination.totalReviews
       fetchReviews(currentLimit)
       alert('Review deleted successfully!')
+=======
+          : pagination.totalReviews;
+      fetchReviews(currentLimit);
+      toast.success("Review deleted successfully!");
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
     } catch (error) {
       console.error('Error deleting review:', error)
       if (error.response?.status === 401) {
+<<<<<<< HEAD
         alert('Please login to delete review')
         navigate('/login')
       } else if (error.response?.status === 403) {
         alert('You can only delete your own reviews')
       } else {
         alert('Failed to delete review. Please try again.')
+=======
+        toast.error("Please login to delete review");
+        navigate("/login");
+      } else if (error.response?.status === 403) {
+        toast.error("You can only delete your own reviews");
+      } else {
+        toast.error("Failed to delete review. Please try again.");
+>>>>>>> 6b877a874fdb78ba8037d52688d61a93a638a646
       }
     }
   }

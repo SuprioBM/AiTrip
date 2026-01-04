@@ -12,25 +12,25 @@ import {
 
 const router = express.Router();
 
-// Create a new review (requires authentication)
+// POST /api/reviews - create a new review (protected)
 router.post("/", protect, createReview);
 
-// Get reviews with pagination for a location
+// GET /api/reviews/location/:locationId - paginated reviews for a location
 router.get("/location/:locationId", getLocationReviews);
 
-// Update a review (requires authentication)
+// PUT /api/reviews/:reviewId - update a review (protected, owner only)
 router.put("/:reviewId", protect, updateReview);
 
-// Delete a review (requires authentication)
+// DELETE /api/reviews/:reviewId - delete a review (protected, owner only)
 router.delete("/:reviewId", protect, deleteReview);
 
-// Mark review as helpful (public)
+// POST /api/reviews/:reviewId/helpful - increment helpful count (public)
 router.post("/:reviewId/helpful", markHelpful);
 
-// Admin: Get all reviews with filters
+// GET /api/reviews/getAllReviews - admin: return all reviews
 router.get("/getAllReviews", getAllReviewsAdmin);
 
-// Get review by ID
+// GET /api/reviews/getreviewbyid - return reviews by `userId` query
 router.get("/getreviewbyid", getReviewById);
 
 export default router;
