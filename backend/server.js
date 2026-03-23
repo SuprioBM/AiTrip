@@ -42,6 +42,9 @@ app.use("/api/localhosts", hostRoutes);
 app.use("/api/partner-ups", partnerRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/trip", tripRoutes);
+app.get('/health', (req, res) => {
+  res.status(200).json({ success: true, message: 'Server is healthy' });
+});
 // Error handler
 app.use(errorHandler);
 
