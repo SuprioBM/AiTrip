@@ -42,8 +42,48 @@ app.use("/api/localhosts", hostRoutes);
 app.use("/api/partner-ups", partnerRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/trip", tripRoutes);
-app.get('/health', (req, res) => {
-  res.status(200).json({ success: true, message: 'Server is healthy' });
+import mongoose from "mongoose";
+
+app.get("/health", async (req, res) => {
+  let mongoStatus = "down";
+  let supabaseStatus = "down";
+
+  // ✅ Check Mongo
+  try {
+    if (mongoose.connection.readyState === 1) {
+      mongoStatus = "up";
+    }
+  } catch (e) {
+    mongoStatus = "down";
+  }
+
+  // ✅ Check Supabase
+  try {
+    const response = await fetch(
+      `${process.env.SUPABASE_URL}/rest/v1/`,
+      {
+        headers: {
+          apikey: process.env.SUPABASE_ANON_KEY,
+        },
+      }
+    );
+
+    if (response.ok || response.status === 401) {
+      supabaseStatus = "up";
+    }
+  } catch (e) {
+    supabaseStatus = "down";
+  }
+
+  const isHealthy = mongoStatus === "up" && supabaseStatus === "up";
+
+  return res.status(isHealthy ? 200 : 500).json({
+    ok: isHealthy,
+    services: {
+      mongo: mongoStatus,
+      supabase: supabaseStatus,
+    },
+  });
 });
 // Error handler
 app.use(errorHandler);
