@@ -1,5 +1,5 @@
 import { useAuth } from "../context/AuthContext";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import API from "../api";
 import { Bell, X, Check, Shield, Menu } from "lucide-react";
@@ -15,6 +15,10 @@ export default function Navigation() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [memberStatuses, setMemberStatuses] = useState({}); // store member statuses
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [isHeaderElevated, setIsHeaderElevated] = useState(false);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -107,9 +111,46 @@ export default function Navigation() {
     };
   }, []);
 
+  useEffect(() => {
+    lastScrollY.current = window.scrollY || 0;
+
+    const handleScroll = () => {
+      if (ticking.current) return;
+      ticking.current = true;
+
+      window.requestAnimationFrame(() => {
+        const currentY = window.scrollY || 0;
+        const delta = currentY - lastScrollY.current;
+        const triggerUp = delta < -6;
+
+        if (currentY <= 0) {
+          setIsHeaderVisible(true);
+          setIsHeaderElevated(false);
+        } else if (triggerUp) {
+          setIsHeaderVisible(true);
+          setIsHeaderElevated(true);
+        } else if (delta > 0) {
+          setIsHeaderVisible(false);
+        }
+
+        lastScrollY.current = currentY;
+        ticking.current = false;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <>
-      <header className="hidden lg:flex w-full items-center fixed top-1 left-1/2 -translate-x-1/2 z-50 backdrop-blur-lg bg-black/60 border border-white/20 rounded-full w-[95%] h-18">
+      <motion.header
+        className={`hidden lg:flex items-center fixed top-1 left-1/2 -translate-x-1/2 z-50 backdrop-blur-lg bg-black/60 border border-white/20 rounded-full w-[95%] h-18 transition-shadow duration-300 ${
+          isHeaderElevated ? "shadow-[0_10px_30px_rgba(0,0,0,0.35)]" : ""
+        }`}
+        animate={{ y: isHeaderVisible ? 0 : "-120%" }}
+        transition={{ type: "spring", stiffness: 200, damping: 24 }}
+      >
         <div className="max-w-7xl mx-auto px-6 mt-1  flex items-center">
           {/* LEFT — NAVIGATION */}
           <div className="flex-shrink-0 -ml-20 px-3">
@@ -218,7 +259,7 @@ export default function Navigation() {
             </div>
           </div>
         </div>
-      </header>
+      </motion.header>
       {/* Mobile-only header with just hamburger */}
       {/* Notifications Modal */}
       {showNotifications && (

@@ -7,30 +7,35 @@ export default function LandingPage() {
   const items = [
     {
       color: "#34D399",
+      name: "Santorini, Greece",
       image: "/santorini-greece-sunset.jpg",
       description:
         "Iconic white buildings, blue domes, and breathtaking sunsets in Santorini, Greece.",
     },
     {
       color: "#60A5FA",
+      name: "Bali, Indonesia",
       image: "/broken-beach-bali.jpg",
       description:
         "Lush rice terraces, rich culture, and beautiful beaches in Bali, Indonesia.",
     },
     {
       color: "#C4B5FD",
+      name: "Kerala, India",
       image: "/kerala-backwaters-india.jpg",
       description:
         "Peaceful houseboat journeys through Kerala's scenic backwaters.",
     },
     {
       color: "#FDE047",
+      name: "Maldives",
       image: "/maldives-islands-resort.jpg",
       description:
         "Crystal-clear waters, coral reefs, and overwater resorts in the Maldives.",
     },
     {
       color: "#F87171",
+      name: "Petra, Jordan",
       image: "/buddhist-temple-thailand.jpg",
       description:
         "Ancient temples and tranquil landscapes shaped by Buddhist traditions in Thailand.",
@@ -138,7 +143,7 @@ export default function LandingPage() {
                 transition={{ duration: 0.6, delay: i * 0.1, ease: "easeOut" }}
                 whileHover={{ y: -8, scale: 1.03 }}
                 className={`w-full sm:w-80 md:w-64 h-72 sm:h-96 rounded-2xl shadow-md overflow-hidden relative ${
-                  i === 1 || i === 3 ? "md:mt-12" : ""
+                  i === 1 || i === 3 ? "md:mt-30" : ""
                 } mx-auto`}
               >
                 <img
@@ -147,9 +152,9 @@ export default function LandingPage() {
                   className="w-full h-full object-cover absolute inset-0"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent p-6 flex flex-col justify-end text-white">
-                  <div className="text-xl font-semibold">Feature {i + 1}</div>
+                  <div className="text-xl font-semibold">{item.name}</div>
                   <p className="text-sm opacity-90">
-                    Explore unique travel experiences designed for you.
+                    {item.description}
                   </p>
                 </div>
               </motion.div>
