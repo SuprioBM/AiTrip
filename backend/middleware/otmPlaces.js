@@ -15,6 +15,49 @@ const WIKIPEDIA_API = "https://en.wikipedia.org/w/api.php";
 const WIKIDATA_API = "https://www.wikidata.org/w/api.php";
 
 let currentServerIndex = 0;
+let lastNominatimAt = 0;
+const geocodeCache = new Map();
+const geocodeInflight = new Map();
+let geocodeQueue = Promise.resolve();
+let overpassQueue = Promise.resolve();
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const normalizeLocationKey = (locationText) =>
+  (locationText || "").toLowerCase().trim();
+
+const FALLBACK_COORDS = {
+  dhaka: { lat: 23.8103, lng: 90.4125 },
+  chittagong: { lat: 22.3569, lng: 91.7832 },
+  khulna: { lat: 22.8456, lng: 89.5403 },
+  sylhet: { lat: 24.8949, lng: 91.8687 },
+  rajshahi: { lat: 24.3636, lng: 88.6241 },
+  barisal: { lat: 22.701, lng: 90.3535 },
+  rangpur: { lat: 25.7439, lng: 89.2752 },
+  mymensingh: { lat: 24.7471, lng: 90.4203 },
+  coxs: { lat: 21.4272, lng: 92.0058 },
+  "cox's bazar": { lat: 21.4272, lng: 92.0058 },
+  comilla: { lat: 23.4607, lng: 91.1809 },
+  jessore: { lat: 23.1664, lng: 89.2083 },
+  jes: { lat: 23.1664, lng: 89.2083 }
+};
+
+const getFallbackCoords = (locationText) => {
+  const key = normalizeLocationKey(locationText);
+  if (!key) {
+    return { ...FALLBACK_COORDS.dhaka, source: "fallback_default" };
+  }
+
+  const entries = Object.entries(FALLBACK_COORDS);
+  for (const [name, coords] of entries) {
+    if (key.includes(name)) {
+      return { ...coords, source: "fallback_static" };
+    }
+  }
+
+  return { ...FALLBACK_COORDS.dhaka, source: "fallback_default" };
+};
+
 
 // ================================================================
 // WIKIPEDIA/WIKIMEDIA FUNCTIONS
@@ -183,85 +226,133 @@ const enrichWithWikipedia = async (place) => {
 // ================================================================
 
 export const geocodeLocation = async (locationText) => {
+  const key = normalizeLocationKey(locationText);
+  if (!key) return getFallbackCoords(locationText);
+
+  if (geocodeCache.has(key)) {
+    return geocodeCache.get(key);
+  }
+
+  if (geocodeInflight.has(key)) {
+    return geocodeInflight.get(key);
+  }
+
+  const queued = (geocodeQueue = geocodeQueue.then(async () => {
+    const backoffSteps = [500, 1000, 2000];
+    let lastError = null;
+
+    for (let attempt = 0; attempt < backoffSteps.length; attempt += 1) {
+      try {
+        const now = Date.now();
+        const elapsed = now - lastNominatimAt;
+        const minDelay = 1200;
+        if (elapsed < minDelay) {
+          await sleep(minDelay - elapsed);
+        }
+
+        if (attempt > 0) {
+          await sleep(backoffSteps[attempt]);
+        }
+
+        const res = await axios.get(NOMINATIM_URL, {
+          params: {
+            q: locationText,
+            format: "json",
+            limit: 5,
+            email: "mugdharj632@gmail.com",
+          },
+          headers: {
+            "User-Agent": "AiTrip/1.0 (Render; contact: mugdharj632@gmail.com)",
+            Accept: "application/json",
+          },
+          timeout: 12000,
+        });
+
+        lastNominatimAt = Date.now();
+
+        if (!Array.isArray(res.data) || res.data.length === 0) {
+          lastError = new Error("Empty Nominatim response");
+          continue;
+        }
+
+        const cityResult = res.data.find(
+          (r) =>
+            r.type === "city" ||
+            r.type === "town" ||
+            r.addresstype === "city" ||
+            r.addresstype === "town" ||
+            r.class === "place"
+        );
+
+        const result = cityResult || res.data[0];
+        const coords = {
+          lat: parseFloat(result.lat),
+          lng: parseFloat(result.lon),
+          source: "nominatim",
+        };
+
+        geocodeCache.set(key, coords);
+        return coords;
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    console.warn("⚠️ Nominatim failed:", lastError?.message);
+
+    const fallback = getFallbackCoords(locationText);
+    geocodeCache.set(key, fallback);
+    return fallback;
+  }));
+
+  geocodeInflight.set(key, queued);
   try {
-    const res = await axios.get(NOMINATIM_URL, {
-      params: {
-        q: locationText,
-        format: "json",
-        limit: 5,
-        email: "mugdharj632@gmail.com",
-      },
-      headers: {
-        "User-Agent": "AiTrip/1.0 (mugdharj632@gmail.com)",
-      },
-      timeout: 8000,
-    });
-
-    console.log("✓ Found", res.data.length, "location results");
-
-    if (!Array.isArray(res.data) || res.data.length === 0) return null;
-
-    const cityResult = res.data.find(
-      (r) =>
-        r.type === "city" ||
-        r.type === "town" ||
-        r.addresstype === "city" ||
-        r.addresstype === "town" ||
-        r.class === "place"
-    );
-
-    const result = cityResult || res.data[0];
-    console.log(
-      "✓ Using:",
-      result.display_name,
-      `(${result.type || result.addresstype})`
-    );
-
-    return {
-      lat: parseFloat(result.lat),
-      lng: parseFloat(result.lon),
-    };
-  } catch (err) {
-    console.error("❌ geocodeLocation error:", err.message);
-    return null;
+    return await queued;
+  } finally {
+    geocodeInflight.delete(key);
   }
 };
 
 const fetchOverpass = async (query, retries = 2) => {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const server = OVERPASS_SERVERS[currentServerIndex];
-      console.log(
-        `🔄 Trying server ${currentServerIndex + 1}/${
-          OVERPASS_SERVERS.length
-        }...`
-      );
+  const task = (overpassQueue = overpassQueue.then(async () => {
+    for (let i = 0; i <= retries; i += 1) {
+      try {
+        const server = OVERPASS_SERVERS[currentServerIndex];
+        console.log(
+          `🔄 Trying server ${currentServerIndex + 1}/${
+            OVERPASS_SERVERS.length
+          }...`
+        );
 
-      const res = await axios.post(server, query, {
-        headers: {
-          "Content-Type": "text/plain",
-          "User-Agent": "AiTrip/1.0 (mugdharj632@gmail.com)",
-        },
-        timeout: 20000,
-      });
+        const res = await axios.post(server, query, {
+          headers: {
+            "Content-Type": "text/plain",
+            "User-Agent": "AiTrip/1.0 (Render; contact: mugdharj632@gmail.com)",
+          },
+          timeout: 20000,
+        });
 
-      return res.data.elements || [];
-    } catch (err) {
-      console.error(
-        `❌ Server ${currentServerIndex + 1} failed:`,
-        err.response?.status || err.message
-      );
-      currentServerIndex = (currentServerIndex + 1) % OVERPASS_SERVERS.length;
+        return res.data.elements || [];
+      } catch (err) {
+        console.error(
+          `❌ Server ${currentServerIndex + 1} failed:`,
+          err.response?.status || err.message
+        );
+        currentServerIndex = (currentServerIndex + 1) % OVERPASS_SERVERS.length;
 
-      if (i === retries) {
-        console.error("❌ All servers failed or timed out");
-        return [];
+        if (i === retries) {
+          console.error("❌ All servers failed or timed out");
+          return [];
+        }
+
+        await sleep(1000);
       }
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-  }
-  return [];
+
+    return [];
+  }));
+
+  return task;
 };
 
 const fetchOverpassPlaces = async (coords, radius = 5000) => {
@@ -547,10 +638,10 @@ export const getNearbyPlaces = async (coords, budget = "medium") => {
 
   try {
     const places = await fetchOverpassPlaces(coords, radius);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await sleep(1000);
 
     const restaurants = await fetchOverpassRestaurants(coords, radius);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await sleep(1000);
 
     const hotels = await fetchOverpassHotels(coords, radius);
 
