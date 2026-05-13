@@ -29,7 +29,6 @@ const wasPageRefreshed = checkAndClearOnRefresh();
 
 export default function BookingPage() {
   const { user } = useAuth();
-  console.log(user);
 
   // Initialize from sessionStorage (will be empty if refreshed)
   const [formData, setFormData] = useState(() => {
@@ -144,7 +143,6 @@ export default function BookingPage() {
         payload.endDate = formData.travelDate;
       }
 
-      console.log("Searching for partners with:", payload);
 
       const { data } = await API.post("/partnerup/search", payload, {
         headers: { Authorization: token ? `Bearer ${token}` : undefined },
@@ -211,9 +209,7 @@ export default function BookingPage() {
         localhostName: host.name,
       };
 
-      console.log("Assigning localhost to trip:", tripData);
       const { data } = await API.post("/trips", tripData);
-      console.log("Response:", data);
 
       if (data.trip) {
         toast.success(
@@ -248,11 +244,9 @@ export default function BookingPage() {
         ? selectedLocation.name.toLowerCase().substring(0, 3)
         : "unk";
 
-      console.log("🔍 Fetching localhosts for location code:", locationCode);
 
       const { data } = await API.get(`/hosts/${locationCode}`);
 
-      console.log("✅ Localhosts fetched:", data);
       setLocalhosts(data.data || []);
     } catch (error) {
       console.error("Error fetching localhosts:", error);
@@ -311,7 +305,6 @@ export default function BookingPage() {
         budget: formData.budget,
         include: ["places", "restaurants", "hotels"],
       });
-      console.log(data);
 
       if (data.success) {
         // Set map center
@@ -382,7 +375,6 @@ export default function BookingPage() {
         });
         //call partnerup search fucntion here based on coordinates lat-lan , if exist then it will show on the partnerup section
         searchPartners();
-        console.log(`✅ Loaded ${allMarkers.length} markers on map`);
       } else {
         console.error("Backend error:", data.message);
       }

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import { AdminProvider } from "./context/AdminContext.jsx";
@@ -12,6 +12,7 @@ import AdminRoute from "./Admin/Adminroute.jsx";
 import DetailsPage from "./pages/detailsPage.jsx";
 import ReviewPage from "./pages/ReviewPage.jsx";
 import UserDashboard from "./pages/Dashboard/UserDashboard.jsx";
+import AIVoyageLoader from "./components/AIVoyageLoader.jsx";
 
 import MainLayout from "./layouts/layout_1.jsx";
 import EmptyLayout from "./layouts/layout_0.jsx";
@@ -19,11 +20,20 @@ import ScrollToHash from "./utils/Scroll.jsx";
 
 const App = () => {
   const { user, loading } = useAuth();
+  const [apiLoading, setApiLoading] = useState(true);
 
-  if (loading) return <p>Loading...</p>; // ✅ Wait for auth
+  useEffect(() => {
+    const timer = setTimeout(() => setApiLoading(false), 1600);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const showLoader = loading || apiLoading;
 
   return (
     <>
+      <AIVoyageLoader isVisible={showLoader} />
+      {!loading && (
+        <>
       <Toaster position="top-right" richColors duration={4000} />
 
         <ScrollToHash />
@@ -80,6 +90,8 @@ const App = () => {
           />
         </Route>
       </Routes>
+        </>
+      )}
     </>
   );
 };

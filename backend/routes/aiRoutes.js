@@ -32,7 +32,6 @@ router.post("/trip-suggestions", async (req, res) => {
   }
 
   try {
-    console.log(`\n🌍 Trip Request: ${location} (${budget})`);
 
     // Step 1: Geocode location
     const coords = await geocodeLocation(location);
@@ -44,16 +43,10 @@ router.post("/trip-suggestions", async (req, res) => {
       });
     }
 
-    console.log(`📍 Coordinates: ${coords.lat}, ${coords.lng}`);
 
     // Step 2: Fetch all data from OSM
     const nearbyData = await getNearbyPlaces(coords, budget);
 
-    console.log("📊 Raw data received:", {
-      places: nearbyData.places?.length || 0,
-      restaurants: nearbyData.restaurants?.length || 0,
-      hotels: nearbyData.hotels?.length || 0,
-    });
 
     // Step 3: Process each category with AI
     const results = {
@@ -64,9 +57,7 @@ router.post("/trip-suggestions", async (req, res) => {
 
     // Process restaurants
     if (include.includes("restaurants") && nearbyData.restaurants?.length > 0) {
-      console.log(
-        `🍽️ Processing ${nearbyData.restaurants.length} restaurants...`
-      );
+  
       const restaurantData = await structureRestaurantDataWithAI({
         location,
         budget,
@@ -79,7 +70,6 @@ router.post("/trip-suggestions", async (req, res) => {
 
     // Process places/attractions
     if (include.includes("places") && nearbyData.places?.length > 0) {
-      console.log(`🏛️ Processing ${nearbyData.places.length} places...`);
       const placesData = await structurePlacesDataWithAI({
         location,
         budget,
@@ -92,7 +82,6 @@ router.post("/trip-suggestions", async (req, res) => {
 
     // Process hotels
     if (include.includes("hotels") && nearbyData.hotels?.length > 0) {
-      console.log(`🏨 Processing ${nearbyData.hotels.length} hotels...`);
       const hotelsData = await structureHotelsDataWithAI({
         hotels: nearbyData.hotels, // Pass the array directly
       });
@@ -101,11 +90,7 @@ router.post("/trip-suggestions", async (req, res) => {
       results.hotels = [];
     }
 
-    console.log("\n✅ Trip suggestions ready:", {
-      places: results.places?.length || 0,
-      restaurants: results.restaurants?.length || 0,
-      hotels: results.hotels?.length || 0,
-    });
+
 
     return res.json(results);
   } catch (err) {
