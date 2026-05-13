@@ -21,7 +21,7 @@ const AIVoyageLoader = ({ isVisible = true, message }) => {
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-transparent text-white backdrop-blur-3xl"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 text-black backdrop-blur-3xl"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
